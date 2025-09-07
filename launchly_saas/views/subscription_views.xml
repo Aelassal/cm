@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Subscription Kanban View -->
+    <record id="view_launchly_subscription_kanban" model="ir.ui.view">
+        <field name="name">launchly.subscription.kanban</field>
+        <field name="model">launchly.subscription</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column" sample="1">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="partner_email"/>
+                <field name="plan_id"/>
+                <field name="subscription_period"/>
+                <field name="start_date"/>
+                <field name="end_date"/>
+                <field name="days_remaining"/>
+                <field name="state"/>
+                <field name="is_expired"/>
+                <field name="sale_order_id"/>
+                <field name="instance_id"/>
+                <field name="instance_state"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click">
+                            <div class="oe_kanban_content">
+                                <div class="o_kanban_record_top">
+                                    <div class="o_kanban_record_headings">
+                                        <strong class="o_kanban_record_title">
+                                            <field name="name"/>
+                                        </strong>
+                                    </div>
+                                    <div class="o_kanban_record_top_right">
+                                        <field name="state" widget="label_selection"
+                                               options="{'classes': {'active': 'success', 'expired': 'danger', 'cancelled': 'warning'}}"/>
+                                    </div>
+                                </div>
+                                <div class="o_kanban_record_body">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <strong>Customer:</strong><br/>
+                                            <field name="partner_id"/>
+                                        </div>
+                                        <div class="col-6">
+                                            <strong>Plan:</strong><br/>
+                                            <field name="plan_id"/><br/>
+                                            <small><strong>Instance:</strong> <field name="instance_id"/></small><br/>
+                                            <small><strong>Instance State:</strong> <field name="instance_state"/></small>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-6">
+                                            <strong>Period:</strong><br/>
+                                            <field name="subscription_period"/>
+                                        </div>
+                                        <div class="col-6">
+                                            <strong>Days Left:</strong><br/>
+                                            <span t-if="record.days_remaining.raw_value >= 0" class="text-success">
+                                                <field name="days_remaining"/>
+                                            </span>
+                                            <span t-else="" class="text-danger">
+                                                <field name="days_remaining"/>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-6">
+                                            <strong>Start:</strong><br/>
+                                            <field name="start_date"/>
+                                        </div>
+                                        <div class="col-6">
+                                            <strong>End:</strong><br/>
+                                            <field name="end_date"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Subscription List View -->
+    <record id="view_launchly_subscription_list" model="ir.ui.view">
+        <field name="name">launchly.subscription.list</field>
+        <field name="model">launchly.subscription</field>
+        <field name="arch" type="xml">
+            <list string="Subscriptions">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="partner_email"/>
+                <field name="plan_id"/>
+                <field name="subscription_period"/>
+                <field name="start_date"/>
+                <field name="end_date"/>
+                <field name="days_remaining"/>
+                <field name="state" decoration-danger="state == 'expired'" decoration-success="state == 'active'"/>
+                <field name="instance_state"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Subscription Form View -->
+    <record id="view_launchly_subscription_form" model="ir.ui.view">
+        <field name="name">launchly.subscription.form</field>
+        <field name="model">launchly.subscription</field>
+        <field name="arch" type="xml">
+            <form string="Subscription">
+                <header>
+                    <button name="action_cancel_subscription" string="Cancel Subscription" 
+                            type="object" class="btn-warning" 
+                            invisible="state != 'active'"/>
+                    <button name="action_reactivate_subscription" string="Reactivate Subscription" 
+                            type="object" class="btn-success" 
+                            invisible="state == 'active'"/>
+                    <button name="action_renew_subscription" string="Renew Subscription"
+                            type="object" class="btn-success"
+                            invisible="state != 'expired'"/>
+                    <button name="action_restart_instance" string="Start Instance"
+                            type="object" class="btn-primary" 
+                            invisible="not instance_id or instance_state == 'running'"/>
+                    <button name="action_stop_instance" string="Stop Instance" 
+                            type="object" class="btn-secondary" 
+                            invisible="not instance_id or instance_state != 'running'"/>
+                    <field name="state" widget="statusbar" 
+       statusbar_visible="active,expired,cancelled"
+       options="{'clickable': True}"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Subscription Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Customer Information">
+                            <field name="partner_id"/>
+                            <field name="partner_email"/>
+                            <field name="subdomain" readonly="instance_id"/>
+                        </group>
+                        <group string="Subscription Details">
+                            <field name="plan_id"/>
+                            <field name="subscription_period" widget="radio"/>
+                            <field name="start_date"/>
+                            <field name="end_date"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Related Records">
+                            <field name="sale_order_id"/>
+                            <field name="instance_id"/>
+                            <field name="instance_state"/>
+                            <field name="allowed_users_count"/>
+                            <field name="allowed_modules_count"/>
+                            <field name="project_id"/>
+                        </group>
+                        <group string="Status Information">
+                            <field name="days_remaining"/>
+                            <field name="is_expired"/>
+                        </group>
+                    </group>
+                    <notebook>
+
+                        <page string="history">
+                            <field name="renewal_history_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="renewal_date"/>
+                                    <field name="previous_start_date"/>
+                                    <field name="previous_end_date"/>
+                                    <field name="new_start_date"/>
+                                    <field name="new_end_date"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Subscription Search View -->
+    <record id="view_launchly_subscription_search" model="ir.ui.view">
+        <field name="name">launchly.subscription.search</field>
+        <field name="model">launchly.subscription</field>
+        <field name="arch" type="xml">
+            <search string="Search Subscriptions">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="partner_email"/>
+                <field name="plan_id"/>
+                <separator/>
+                <filter string="Active" name="active" domain="[('state', '=', 'active')]"/>
+                <filter string="Expired" name="expired" domain="[('state', '=', 'expired')]"/>
+                <filter string="Cancelled" name="cancelled" domain="[('state', '=', 'cancelled')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Customer" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Plan" name="group_plan" context="{'group_by': 'plan_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Subscription Period" name="group_period" context="{'group_by': 'subscription_period'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Subscription Action -->
+
+</odoo> 

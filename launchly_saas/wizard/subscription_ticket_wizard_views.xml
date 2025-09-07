@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Subscription Ticket Wizard Form View -->
+        <record id="view_subscription_ticket_wizard_form" model="ir.ui.view">
+            <field name="name">subscription.ticket.wizard.form</field>
+            <field name="model">subscription.ticket.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Create Support Ticket">
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="subscription_id" readonly="1"/>
+                                <field name="partner_id" readonly="1"/>
+                                <field name="partner_email" readonly="1"/>
+                            </group>
+                        </group>
+                        <group>
+                            <field name="subject" placeholder="Enter ticket subject..."/>
+                        </group>
+                        <group>
+                            <field name="description" placeholder="Describe your issue in detail..."/>
+                        </group>
+                        <group>
+                            <field name="attachment_ids" widget="many2many_binary" options="{'accepted_file_extensions': 'image/*,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document'}"/>
+                        </group>
+                    </sheet>
+                    <footer>
+                        <button name="action_create_ticket" string="Send Ticket" type="object" class="btn-primary"/>
+                        <button string="Cancel" class="btn-secondary" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <!-- Subscription Ticket Wizard Action -->
+        <record id="action_subscription_ticket_wizard" model="ir.actions.act_window">
+            <field name="name">Create Support Ticket</field>
+            <field name="res_model">subscription.ticket.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+    </data>
+</odoo> 

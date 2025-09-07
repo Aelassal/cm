@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Demo Welcome Email Template -->
+        <record id="mail_template_demo_welcome" model="mail.template">
+            <field name="name">Demo Instance Welcome</field>
+            <field name="model_id" ref="launchly_saas.model_odoo_docker_instance"/>
+            <field name="subject">Welcome to Your Demo Instance - {{ object.company_name }}</field>
+            <field name="email_from">{{ user.email_formatted or 'noreply@launchly.com' }}</field>
+            <field name="partner_to">{{ object.user_email }}</field>
+            <field name="body_html" type="html">
+                <div style="margin: 0px; padding: 0px; font-size: 13px;">
+                    <p style="margin: 0px; padding: 0px; font-size: 13px;">
+                        Dear {{ object.company_name }},
+                    </p>
+                    <p style="margin: 0px; padding: 0px; font-size: 13px;">
+                        Thank you for creating your demo instance with Launchly! We're excited to have you on board.
+                    </p>
+                    
+                    <div style="margin: 20px 0px; padding: 15px; background-color: #f8f9fa; border-left: 4px solid #007bff;">
+                        <h3 style="margin: 0px 0px 10px 0px; color: #007bff;">Your Demo Instance Details</h3>
+                        <p style="margin: 5px 0px;"><strong>Company:</strong> {{ object.company_name }}</p>
+                        <p style="margin: 5px 0px;"><strong>Login:</strong> {{ object.user_email }}</p>
+                        <p style="margin: 5px 0px;"><strong>Password:</strong> {{ object.user_phone }}</p>
+                        <p style="margin: 5px 0px;"><strong>Plan:</strong> {{ object.plan_id.name if object.plan_id else 'N/A' }}</p>
+                        <p style="margin: 5px 0px;"><strong>Instance URL:</strong> 
+                            <a href="{{ object.instance_url }}" style="color: #007bff;">{{ object.instance_url }}</a>
+                        </p>
+                        <p style="margin: 5px 0px;"><strong>Custom Domain:</strong> 
+                            <a href="{{ object.domained_url }}" style="color: #007bff;">{{ object.domained_url }}</a>
+                        </p>
+                    </div>
+                    
+                    <div style="margin: 20px 0px; padding: 15px; background-color: #d4edda; border-left: 4px solid #28a745;">
+                        <h3 style="margin: 0px 0px 10px 0px; color: #155724;">🎉 30-Day Free Trial</h3>
+                        <p style="margin: 5px 0px; color: #155724;">
+                            You now have access to a full-featured demo instance for 30 days, completely free!
+                        </p>
+                    </div>
+                    
+                    <div style="margin: 20px 0px;">
+                        <h3 style="margin: 0px 0px 10px 0px;">What's Next?</h3>
+                        <ul style="margin: 0px; padding-left: 20px;">
+                            <li style="margin: 5px 0px;">Your instance is being configured and will be ready in 5-10 minutes</li>
+                            <li style="margin: 5px 0px;">Use the links above to access your instance</li>
+                            <li style="margin: 5px 0px;">Explore all features and modules included in your plan</li>
+                            <li style="margin: 5px 0px;">Contact our support team if you need any assistance</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="margin: 20px 0px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107;">
+                        <h3 style="margin: 0px 0px 10px 0px; color: #856404;">Need Help?</h3>
+                        <p style="margin: 5px 0px; color: #856404;">
+                            Our support team is here to help you get the most out of your demo instance. 
+                            Don't hesitate to reach out if you have any questions or need assistance.
+                        </p>
+                    </div>
+                    
+                    <p style="margin: 20px 0px;">
+                        Best regards,<br/>
+                        The Launchly Team
+                    </p>
+                    
+                    <hr style="margin: 20px 0px; border: none; border-top: 1px solid #dee2e6;"/>
+                    <p style="margin: 0px; font-size: 11px; color: #6c757d;">
+                        This is an automated message. Please do not reply to this email.
+                    </p>
+                </div>
+            </field>
+            <field name="lang">{{ object.user_email }}</field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+    </data>
+</odoo> 
+ 
+ 

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Sequence for Subscription Tickets -->
+        <record id="seq_subscription_ticket" model="ir.sequence">
+            <field name="name">Subscription Ticket</field>
+            <field name="code">subscription.ticket</field>
+            <field name="prefix">TKT</field>
+            <field name="padding">5</field>
+            <field name="number_next">1</field>
+            <field name="number_increment">1</field>
+        </record>
+        
+        <!-- Sequence for Uploades -->
+        <record id="seq_uploades" model="ir.sequence">
+            <field name="name">Uploades</field>
+            <field name="code">uploades</field>
+            <field name="prefix">UPL</field>
+            <field name="padding">5</field>
+            <field name="number_next">1</field>
+            <field name="number_increment">1</field>
+        </record>
+        
+        <!-- Sequence for Subscription Renewal History -->
+        <record id="seq_subscription_renewal_history" model="ir.sequence">
+            <field name="name">Subscription Renewal History</field>
+            <field name="code">subscription.renewal.history</field>
+            <field name="prefix">REN</field>
+            <field name="padding">5</field>
+            <field name="number_next">1</field>
+            <field name="number_increment">1</field>
+        </record>
+    </data>
+</odoo> 

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_instance_plan_list" model="ir.ui.view">
+        <field name="name">instance.plan.list</field>
+        <field name="model">instance.plan</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="is_demo"/>
+                <field name="template_id"/>
+                <field name="allowed_users_count"/>
+                <field name="allowed_modules_count"/>
+                <field name="custom_addon_line_ids" widget="many2many_tags"/>
+                <field name="odoo_addon_line_ids" widget="many2many_tags"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_instance_plan_form" model="ir.ui.view">
+        <field name="name">instance.plan.form</field>
+        <field name="model">instance.plan</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="is_demo"/>
+                        <field name="template_id"/>
+                        <field name="allowed_users_count"/>
+                        <field name="allowed_modules_count"/>
+                    </group>
+                    <group string="Custom Addons">
+                        <field name="custom_addon_line_ids" 
+                               widget="many2many_tags" 
+                               options="{'no_create': True}"
+                               domain="[('instance_id', '=', instance_id_for_domain)]"/>
+                    </group>
+                    <group string="Odoo Addons">
+                        <field name="odoo_addon_line_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+
+
+</odoo>
+
+

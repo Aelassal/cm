@@ -1,0 +1,15 @@
+id,name,model_id:id,group_id:id,perm_read,perm_create,perm_write,perm_unlink
+acces_odoo_docker_instance,access_odoo_docker_instance,model_odoo_docker_instance,,1,1,1,1
+acces_docker_compose_template_user,access_docker_compose_template_user,model_docker_compose_template,,1,1,1,1
+acces_custom_addon_line,access_custom_addon_line,model_custom_addon_line,,1,1,1,1
+acces_odoo_addon_line,access_odoo_addon_line,model_odoo_addon_line,,1,1,1,1
+acces_custom_addon_installer_wizard,access_custom_addon_installer_wizard,model_custom_addon_installer_wizard,,1,1,1,1
+acces_custom_addon_file,acces_custom_addon_file,model_custom_addon_file,,1,1,1,1
+acces_odoo_db_user,acces_odoo_db_user,model_odoo_db_user,,1,1,1,1
+access_saas_config,access saas config,model_saas_config,,1,1,1,1
+access_instance_plan,access instance plan,model_instance_plan,,1,1,1,1
+access_odoo_instance_backup,access odoo instance backup,model_odoo_instance_backup,,1,1,1,1
+access_instance_backup_file_wizard,access_instance_backup_file_wizard,model_instance_backup_file_wizard,base.group_user,1,1,1,1
+access_instance_backup_file_line,access_instance_backup_file_line,model_instance_backup_file_line,base.group_user,1,1,1,1
+access_launchly_subscription,access launchly subscription,model_launchly_subscription,base.group_user,1,1,1,1
+access_subscription_renewal_history,access subscription renewal history,model_subscription_renewal_history,base.group_user,1,1,1,1

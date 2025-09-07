@@ -1,0 +1,482 @@
+<?xml version="1.0"?>
+<odoo>
+
+    <record model="ir.ui.view" id="view_odoo_docker_instance_form">
+        <field name="name">odoo.docker.instance.form</field>
+        <field name="model">odoo.docker.instance</field>
+        <field name="arch" type="xml">
+            <form string="Odoo Docker Instance">
+                <header>
+                    <button string="Create Docker Environment" invisible="state not in ('draft', 'error')" type="object" name="create_docker_environment"
+                            class="oe_highlight o_button_icon o_icon_check"
+                            confirm="This will create the Docker environment. Are you sure you want to proceed?"/>
+<!--                    <button string="Initiate Instance" invisible="state in ('running')" type="object" name="start_instance"-->
+<!--                            class="oe_highlight o_button_icon o_icon_play"/>-->
+                    <button string="Setup User" invisible="state != 'running'" type="object" name="setup_user_manually"
+                            class="o_button_icon" icon="fa-user-plus"
+                            confirm="This will setup the admin user with your configured credentials. Continue?"/>
+                    <button string="start Instance" type="object" name="restart_instance" invisible="state in ('running','draft')"
+                            class="oe_highlight o_button_icon o_icon_play"/>
+                    <button string="restart Instance" type="object" name="reload_instance" invisible="state != 'running'"
+                            class="oe_highlight o_button_icon o_icon_refresh"/>
+                    <button string="Stop Instance" type="object" name="stop_instance" invisible="state != 'running'"
+                            class="o_button_icon o_icon_stop"/>
+                    <button string="Get Resources" type="object" name="update_resource_fields" class="btn btn-primary o_button_icon" invisible="state != 'running'"/>
+
+
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Instance Configuration">
+                            <field name="name"/>
+                            <field name="includes_subdomain"/>
+                            <field name="subdomain_name" invisible="includes_subdomain == False"/>
+                            <field name="domained_url" invisible="includes_subdomain == False" widget="url"/>
+                            <field name="nginx_config_path" invisible="includes_subdomain == False"/>
+                            <field name="ssl_certificate_expiry" invisible="includes_subdomain == False"/>
+                            <field name="http_ip"/>
+                            <field name="instance_url" readonly="1" widget="url"/>
+                            <field name="http_port" readonly="state != 'draft'"/>
+                            <field name="longpolling_port" readonly="state != 'draft'"/>
+                        </group>
+                        <group string="User Information">
+                            <field name="root_sudo_password" required="1"/>
+                            <field name="user_email" required="1"/>
+                            <field name="user_phone"/>
+                            <field name="company_name" required="1"/>
+                            <field name="country_id" required="1"/>
+                            <field name="plan_id"/>
+<!--                            <field name="prevent_installing_modules" />-->
+                            <field name="allowed_users_count" required="1"/>
+                            <field name="allowed_modules_count" required="0"/>
+                            <field name="odoo_addon_line_ids" widget="many2many_tags" options="{'no_create': True}"/>
+<!--                            <field name="custom_addon_line_ids" widget="many2many_tags" options="{'no_create': True}"/>-->
+
+                            <field name="is_demo" help="Enable this to create the database with demo data"/>
+                            <field name="database_name" readonly="1"/>
+                            <field name="user_password" readonly="1" />
+                            <field name="admin_password" readonly="1" password="True"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Technical Configuration">
+                            <field name="template_id" readonly="state != 'draft'"/>
+                            <field name="addons_path" readonly="state != 'draft'"/>
+                            <field name="user_path" readonly="state != 'draft'"/>
+                            <field name="instance_data_path" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <group string="Resources">
+                        <field name="cpu_usage_bar" widget="progressbar" options="{'max': 100}" string="CPU Usage (%)"/>
+                        <field name="cpu_usage_percent" readonly="1"/>
+
+                        <field name="memory_usage_bar" widget="progressbar" options="{'max': 100}" string="Memory Usage (%)"/>
+                        <field name="memory_usage_percent" readonly="1"/>
+                        <field name="storage_usage" readonly="1"/>
+
+                        <field name="memory_usage" readonly="1" string="Memory Usage (used/total)"/>
+                        <field name="net_io" readonly="1" string="Network I/O"/>
+                        <field name="block_io" readonly="1" string="Block I/O"/>
+                        <field name="pids_count" readonly="1" string="Processes (PIDs)"/>
+                    </group>
+
+
+                    <notebook>
+
+                        <page string="Custom Addons">
+                            <div class="oe_button_box" style="margin-bottom: 10px;">
+                                <button string="Clean Custom Addons" type="object" name="clean_custom_addons" 
+                                        class="btn btn-warning o_button_icon" 
+                                        icon="fa-broom"
+                                        confirm="Are you sure you want to clean all custom addons? This will remove all extracted files and reset their status."/>
+                                <button string="Apply Addons Changes" type="object" name="apply_custom_addons_changes" 
+                                        invisible="state == 'draft'" class="btn btn-primary o_button_icon" 
+                                        icon="fa-puzzle-piece"
+                                        confirm="This will update the addons path and restart the instance if running. Continue?"/>
+                                <button string="Update Apps List" type="object" name="update_addons_list" 
+                                        invisible="state != 'running'" class="btn btn-info o_button_icon" 
+                                        icon="fa-refresh"/>
+
+                            </div>
+                            <div class="alert alert-info" role="alert" invisible="state == 'draft'">
+                                <strong>How to use custom addons:</strong>
+                                <ol>
+                                    <li>Upload your addon ZIP files using the form below</li>
+                                    <li>Click "Apply Addons Changes" to make them available to Odoo</li>
+                                    <li>If instance is running, use "Update Apps List" to refresh the Apps menu</li>
+                                    <li>Install your custom addons from the Apps menu in your Odoo instance</li>
+                                </ol>
+                            </div>
+                            <field name="custom_addon_line">
+                                <list string="Custom Addons">
+                                    <field name="addon_name"/>
+                                    <field name="addon_version"/>
+                                    <field name="addon_author"/>
+                                    <field name="upload_method"/>
+                                    <field name="state" widget="badge" 
+                                           decoration-success="state == 'ready'"
+                                           decoration-info="state == 'installed'"
+                                           decoration-warning="state == 'uploaded'"
+                                           decoration-danger="state == 'error'"
+                                           decoration-muted="state == 'draft'"/>
+                                    <field name="is_extracted" widget="boolean_button" readonly="1"/>
+                                    <button string="Install" type="object" name="action_install_addon" 
+                                            icon="fa-download" class="btn-link text-primary"
+                                            invisible="state != 'ready' or not is_extracted"
+                                            confirm="Install this addon in the running Odoo instance?"/>
+                                    <button string="Uninstall" type="object" name="action_uninstall_addon" 
+                                            icon="fa-trash" class="btn-link text-warning"
+                                            invisible="state != 'installed'"
+                                            confirm="Uninstall this addon from the running Odoo instance?"/>
+                                    <button string="Apply Changes" type="object" name="action_apply_addon_changes" 
+                                            icon="fa-check" class="btn-link text-success"
+                                            invisible="not is_extracted or state == 'installed'"
+                                            confirm="Apply this addon changes to the instance?"/>
+                                    <button string="Remove" type="object" name="action_remove_addon" 
+                                            icon="fa-trash" class="btn-link text-danger"
+                                            invisible="state == 'installed'"
+                                            confirm="Are you sure you want to remove this addon? This will delete all files and cannot be undone."/>
+                                    <button string="Reinstall" type="object" name="action_reinstall_addon" 
+                                            icon="fa-refresh" class="btn-link"
+                                            invisible="state == 'installed'"
+                                            confirm="Are you sure you want to reinstall this addon? This will reprocess the files."/>
+                                    <button string="Upgrade" type="object" name="action_upgrade_addon"
+                                            icon="fa-refresh" class="btn-link"
+                                            invisible="state != 'installed'"
+                                            />
+                                    <button string="Update" type="object" name="action_update_addon_code"
+                                            icon="fa-upload" class="btn-link"
+                                            invisible="state != 'installed'"
+                                            />
+                                </list>
+                                <form string="Custom Addon">
+                                    <sheet>
+                                        <div class="oe_button_box">
+                                            <button string="Install Addon" type="object" name="action_install_addon" 
+                                                    class="btn btn-success o_button_icon" 
+                                                    icon="fa-download"
+                                                    invisible="state != 'ready' or not is_extracted"
+                                                    confirm="Install this addon in the running Odoo instance?"/>
+                                            <button string="Uninstall Addon" type="object" name="action_uninstall_addon" 
+                                                    class="btn btn-warning o_button_icon" 
+                                                    icon="fa-trash"
+                                                    invisible="state != 'installed'"
+                                                    confirm="Uninstall this addon from the running Odoo instance?"/>
+                                            <button string="Remove Addon" type="object" name="action_remove_addon" 
+                                                    class="btn btn-danger o_button_icon" 
+                                                    icon="fa-trash"
+                                                    invisible="state == 'installed'"
+                                                    confirm="Are you sure you want to remove this addon? This will delete all files and cannot be undone."/>
+                                            <button string="Reinstall Addon" type="object" name="action_reinstall_addon" 
+                                                    class="btn btn-primary o_button_icon" 
+                                                    icon="fa-refresh"
+                                                    invisible="state == 'installed'"
+                                                    confirm="Are you sure you want to reinstall this addon? This will reprocess the files."/>
+                                        </div>
+                                        <group>
+                                            <group string="Upload Method">
+                                                <field name="upload_method" widget="radio"/>
+                                                <field name="state" readonly="1"/>
+                                                <field name="is_extracted" readonly="1"/>
+                                            </group>
+                                            <group string="Status">
+                                                <field name="addon_name" readonly="1"/>
+                                                <field name="addon_path" readonly="1"/>
+                                            </group>
+                                        </group>
+                                        
+                                        <!-- ZIP File Upload -->
+                                        <group string="ZIP File Upload" invisible="upload_method != 'file'">
+                                            <field name="addon_file" filename="addon_filename"/>
+                                            <field name="addon_filename" readonly="1"/>
+                                        </group>
+                                        
+                                        <!-- Server Path -->
+                                        <group string="Server Path" invisible="upload_method != 'path'">
+                                            <field name="server_path" placeholder="e.g., /home/user/my_addon" 
+                                                   help="Enter the full path to your addon folder on the server"/>
+                                        </group>
+                                        
+                                        <!-- Folder Upload (for future implementation) -->
+                                        <group string="Folder Upload" invisible="upload_method != 'folder'">
+                                            <div class="alert alert-info">
+                                                <strong>Folder Upload:</strong> This feature allows you to upload multiple files to recreate the addon folder structure.
+                                                <br/>Note: This is an advanced feature. For most cases, use ZIP file or server path.
+                                            </div>
+                                            <field name="addon_folder_files">
+                                                <list string="Addon Files">
+                                                    <field name="file_path"/>
+                                                    <field name="filename"/>
+                                                </list>
+                                                <form string="Addon File">
+                                                    <group>
+                                                        <field name="file_path" placeholder="e.g., __manifest__.py or static/description/icon.png"/>
+                                                        <field name="filename"/>
+                                                        <field name="file_content" filename="filename"/>
+                                                    </group>
+                                                </form>
+                                            </field>
+                                        </group>
+                                        
+                                        <group string="Addon Details (Auto-detected from manifest)" invisible="state != 'ready'">
+                                            <group>
+                                                <field name="addon_version" readonly="1"/>
+                                                <field name="addon_author" readonly="1"/>
+                                                <field name="addon_summary" readonly="1"/>
+                                            </group>
+                                            <group>
+                                                <field name="addon_depends" readonly="1"/>
+                                                <field name="addon_description" readonly="1"/>
+                                            </group>
+                                        </group>
+                                        
+                                        <group string="Error Information" invisible="not error_message">
+                                            <field name="error_message" nolabel="1" readonly="1" 
+                                                   style="color: red; background-color: #ffe6e6; padding: 10px; border-radius: 5px;"/>
+                                        </group>
+                                    </sheet>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="All Addons">
+                            <button string="Refresh Addons List" type="object" name="refresh_addons_list" class="btn btn-info o_button_icon" icon="fa-refresh"/>
+                            <field name="addon_line">
+                                <list editable="bottom" string="All Addons" create="false" delete="false">
+                                    <field name="display_name"/>
+                                    <field name="name"/>
+                                    <field name="state" widget="badge"
+
+                                           decoration-success="state == 'installed'"
+
+
+                                           decoration-muted="state == 'uninstalled'"/>
+                                    <field name="summary"/>
+                                    <field name="application"/>
+                                    <field name="license"/>
+                                    <field name="latest_version"/>
+                                    <button name="action_install" string="Install" type="object" icon="fa-download" invisible="state == 'installed'"/>
+                                    <button name="action_uninstall" string="Uninstall" type="object" icon="fa-trash" invisible="state == 'uninstalled'"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                    <notebook>
+                        <page string="Users">
+                            <div class="oe_button_box" style="margin-bottom: 10px;">
+                                <button string="refresh useres" type="object" name="refresh_db_users"
+                            invisible="state != 'running'" class="o_button_icon"
+                            icon="fa-refresh"/>
+                            </div>
+
+                            <field name="db_users">
+                                <list editable="bottom" create="false" delete="false">
+                                    <field name="instance_state" column_invisible="1"/>
+                                    <field name="name" string="Name"/>
+                                    <field name="login" required="1"/>
+                                    <field name="current_password"/>
+                                    <field name="new_password" />
+                                    <field name="password_state" widget="badge"
+                                           decoration-success="password_state == 'changed'"
+                                           decoration-warning="password_state == 'waiting'"
+                                           decoration-danger="password_state == 'failed'"
+                                           decoration-info="password_state == 'draft'"/>
+                                    <field name="login_date"/>
+                                    <button string="change password" type="object" name="change_password"
+                                            icon="fa-check" class="btn-link"
+                                            invisible="password_state != 'waiting' or not new_password"
+                                            confirm="Are you sure you want to change the User's Password"/>
+                                    <button string="Login As User" type="object" name="action_login_as_user"
+                                            icon="fa-sign-in" class="btn-link" invisible="instance_state != 'running'"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                    <notebook>
+                        <page string="Logs">
+                            <div class="oe_button_box" style="margin-bottom: 10px;">
+                                <button string="Clear Log" type="object" name="clear_log"
+                                        class="btn btn-warning o_button_icon" 
+                                        icon="fa-trash"
+                                        confirm="Are you sure you want to clear the log? This action cannot be undone."/>
+
+                            </div>
+                            <field name="log" colspan="4" nolabel="1"
+                                   style=" width: 100%; height: 600px;  overflow-y: auto;color:rgb(255,255,255);  background: black;"
+                                   widget="html" readonly="1"/>
+                        </page>
+                        <page string="DB Logs">
+                            <div class="oe_button_box" style="margin-bottom: 10px;">
+                                <button string="Refresh Logs" type="object" name="refresh_docker_logs" 
+                                        class="btn btn-primary o_button_icon" 
+                                        icon="fa-refresh"/>
+                                <button string="Clear DB Logs" type="object" name="clear_docker_logs" 
+                                        class="btn btn-warning o_button_icon" 
+                                        icon="fa-trash"
+                                        confirm="Are you sure you want to clear the Docker logs? This action cannot be undone."/>
+                            </div>
+                            <field name="docker_logs" colspan="4" nolabel="1"
+                                   style="width: 100%; height: 600px; overflow-y: auto; color: rgb(0,255,0); background: black; font-family: monospace; white-space: pre-wrap;"
+                                   widget="text" readonly="1"/>
+                        </page>
+                        <page string="Odoo Configuration">
+                            <div class="oe_button_box" style="margin-bottom: 10px;">
+                                <button string="Load Configuration" type="object" name="load_odoo_conf" 
+                                        class="btn btn-primary o_button_icon" 
+                                        icon="fa-download"
+                                        help="Load the current odoo.conf file from the instance"/>
+                                <button string="Save Configuration" type="object" name="save_odoo_conf" 
+                                        class="btn btn-success o_button_icon" 
+                                        icon="fa-save"
+                                        confirm="Are you sure you want to save the configuration? This will overwrite the current odoo.conf file."
+                                        help="Save the configuration content to the odoo.conf file"/>
+                            </div>
+                            <field name="odoo_conf_content" colspan="4" nolabel="1"
+                                   style="width: 100%; height: 600px; overflow-y: auto; background: white; font-family: monospace; white-space: pre-wrap;"
+                                   widget="text" placeholder="# Odoo Configuration File
+# Load the configuration using the 'Load Configuration' button above
+# Edit the content here and save using the 'Save Configuration' button
+
+[options]
+# Database settings
+db_host = db
+db_port = 5432
+db_user = odoo
+db_password = odoo
+
+# Server settings
+xmlrpc_port = 8069
+longpolling_port = 8072
+
+# Log settings
+log_level = info
+logfile = /var/log/odoo/odoo.log
+
+# Add your custom configuration here..."/>
+                        </page>
+                        <page string="Operations">
+                            <div class="oe_button_box" style="margin-bottom: 10px;">
+                                <button string="Start Odoo Service" type="object" name="start_odoo_service" invisible="state != 'running'"
+                            class="o_button_icon" icon="fa-check"
+                            confirm="This will start only the Odoo service (not the entire container). Continue?"/>
+                                <button string="Restart Odoo Service" type="object" name="restart_odoo_service" invisible="state != 'running'"
+                            class="o_button_icon" icon="fa-refresh"
+                            confirm="This will restart only the Odoo service (not the entire container). Continue?"/>
+
+
+                                <button string="Stop Odoo Service" type="object" name="stop_odoo_service" invisible="state != 'running'"
+                            class="o_button_icon" icon="fa-stop"
+                            confirm="This will stop only the Odoo service (not the entire container). Continue?"/>
+                    <button string="Apply Custom Addons Changes" type="object" name="apply_custom_addons_changes"
+                            invisible="state == 'draft'" class="o_button_icon"
+                            icon="fa-puzzle-piece"
+                            confirm="This will update the addons path and restart the instance if running. Continue?"/>
+                    <button string="Update Addons List" type="object" name="update_addons_list"
+                            invisible="state != 'running'" class="o_button_icon"
+                            icon="fa-refresh"/>
+                                <button string="refresh useres" type="object" name="refresh_db_users"
+                            invisible="state != 'running'" class="o_button_icon"
+                            icon="fa-refresh"/>
+                            </div>
+
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+
+    <record model="ir.ui.view" id="view_odoo_docker_instance_kanban">
+        <field name="name">odoo.docker.instance.kanban</field>
+        <field name="model">odoo.docker.instance</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_mobile" archivable="false">
+                <field name="state"/>
+                <field name="name"/>
+                <field name="company_name"/>
+                <field name="user_email"/>
+                <field name="database_name"/>
+                <field name="instance_url"/>
+                <field name="http_port"/>
+                <field name="longpolling_port"/>
+                <field name="addons_path"/>
+                <field name="active_users_count"/>
+                <field name="user_activity_status"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click">
+                            <div class="o_kanban_record_bottom">
+                                <div class="oe_kanban_bottom_right">
+                                    <span
+                                        t-attf-class="badge #{['draft', 'error'].indexOf(record.state.raw_value) > -1 ? 'badge-secondary' : ['stopped'].indexOf(record.state.raw_value) > -1 ? 'badge-danger' : ['running'].indexOf(record.state.raw_value) > -1 ? 'badge-success' : ''}">
+                                        <field name="state"/>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="oe_kanban_card">
+                                <div class="oe_kanban_card_header">
+                                    <div class="oe_kanban_card_header_title">
+                                        <field name="name"/>
+                                    </div>
+
+                                </div>
+                                <div class="oe_kanban_card_content">
+                                    <div class="oe_kanban_card_content_field">
+                                        <strong>Company:</strong> <field name="company_name"/>
+                                    </div>
+                                    <div class="oe_kanban_card_content_field">
+                                        <strong>Email:</strong> <field name="user_email"/>
+                                    </div>
+                                    <div class="oe_kanban_card_content_field">
+                                        <strong>Database:</strong> <field name="database_name"/>
+                                    </div>
+                                    <div class="oe_kanban_card_content_field">
+                                        <strong>URL:</strong> <field name="instance_url" widget="url"/>
+                                    </div>
+                                    <div class="oe_kanban_card_content_field">
+                                        <strong>HTTP Port:</strong> <field name="http_port"/>
+                                    </div>
+                                    <div class="oe_kanban_card_content_field">
+                                        <strong>Longpolling Port:</strong> <field name="longpolling_port"/>
+                                    </div>
+                                    <div class="oe_kanban_card_content_field">
+                                        <strong>Active Users:</strong>
+                                        <span>
+                                            <field name="active_users_count"/>
+<!--                                            <t t-if="record.active_users_count.raw_value > 1">-->
+<!--                                                <field name="active_users_count"/>-->
+<!--                                            </t>-->
+<!--                                            <t t-else="">-->
+<!--                                                0-->
+<!--                                            </t>-->
+                                        </span>
+                                    </div>
+                                    <div class="oe_kanban_card_content_field">
+                                        <field name="addons_path"/>
+                                    </div>
+
+                                </div>
+                                <br/>
+
+                                <div class="oe_kanban_bottom_right">
+                                    <div class="oe_kanban_card_manage">
+<!--                                        <button type="object" name="start_instance" invisible="state in ('running')" class="btn btn-primary">Initiate-->
+<!--                                        </button>-->
+                                        <button type="object" invisible="state in ('running','draft')" name="restart_instance" class="btn btn-warning">start
+                                        </button>
+                                        <button type="object" name="stop_instance" invisible="state != 'running'" class="btn btn-danger">Stop</button>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+
+</odoo>

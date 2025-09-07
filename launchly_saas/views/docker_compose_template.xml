@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Vista de Lista para DockerComposeTemplate -->
+        <record id="view_docker_compose_template_list" model="ir.ui.view">
+            <field name="name">docker.compose.template.list</field>
+            <field name="model">docker.compose.template</field>
+            <field name="arch" type="xml">
+                <list>
+                    <field name="sequence" widget="handle"/>
+                    <field name="name"/>
+                    <field name="active"/>
+                    <field name="source_path"/>
+                    <field name="odoo_version"/>
+                </list>
+            </field>
+        </record>
+        <record id="view_docker_compose_template_form" model="ir.ui.view">
+            <field name="name">docker.compose.template.form</field>
+            <field name="model">docker.compose.template</field>
+            <field name="arch" type="xml">
+                <form>
+
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <field name="sequence" invisible="1"/>
+                            <field name="active"/>
+                            <field name="source_path"/>
+                    <field name="odoo_version"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+    </data>
+</odoo>

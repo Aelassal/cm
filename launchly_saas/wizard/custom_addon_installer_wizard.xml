@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<odoo>
+    <record id="view_custom_addon_installer_wizard_form" model="ir.ui.view">
+        <field name="name">custom.addon.installer.wizard.form</field>
+        <field name="model">custom.addon.installer.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Install Custom Addons">
+                <div class="alert alert-info" role="alert">
+                    <strong>Install Custom Addons</strong>
+                    <p>Select the custom addons you want to make available in your Odoo instance.</p>
+                </div>
+                <group>
+                    <field name="instance_id" readonly="1"/>
+                    <field name="install_method" widget="radio"/>
+                </group>
+                <group string="Available Custom Addons">
+                    <field name="addon_line_ids" nolabel="1" widget="many2many_checkboxes">
+                        <list>
+                            <field name="addon_name"/>
+                            <field name="addon_version"/>
+                            <field name="addon_author"/>
+                            <field name="addon_description"/>
+                        </list>
+                    </field>
+                </group>
+                <div class="alert alert-warning" role="alert" invisible="install_method != 'restart'">
+                    <strong>Restart Method:</strong> This will restart your instance to make the addons available. 
+                    You'll then need to install them from the Apps menu in Odoo.
+                </div>
+                <div class="alert alert-info" role="alert" invisible="install_method != 'api'">
+                    <strong>API Method (Experimental):</strong> This will try to install the addons directly via API calls. 
+                    This method may not work with all addon types.
+                </div>
+                <footer>
+                    <button string="Install Addons" name="action_install_addons" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_custom_addon_installer_wizard" model="ir.actions.act_window">
+        <field name="name">Install Custom Addons</field>
+        <field name="res_model">custom.addon.installer.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_odoo_docker_instance"/>
+        <field name="binding_view_types">form</field>
+    </record>
+</odoo> 

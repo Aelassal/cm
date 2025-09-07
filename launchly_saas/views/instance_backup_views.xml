@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_instance_backup_list" model="ir.ui.view">
+        <field name="name">odoo.instance.backup.list</field>
+        <field name="model">odoo.instance.backup</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="backup_date"/>
+                <field name="status"/>
+                <field name="instance_ids" widget="many2many_tags"/>
+<!--                <field name="backup_filename"/>-->
+                <field name="backup_frequency"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_instance_backup_form" model="ir.ui.view">
+        <field name="name">odoo.instance.backup.form</field>
+        <field name="model">odoo.instance.backup</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+        <button class="oe_stat_button" type="object" name="action_backup_instances" icon="fa-database" string="Backup Now"/>
+        <button class="oe_stat_button" type="object" name="action_show_backup_files" icon="fa-download" string="Show Backup Files"/>
+    </div>
+
+                    <group>
+                        <field name="name"/>
+                        <field name="backup_date"/>
+                        <field name="status"/>
+                        <field name="instance_ids" widget="many2many_tags"/>
+                        <field name="backup_path"/>
+                        <field name="backup_frequency"/>
+                    </group>
+                    <group>
+                        <field name="auto_remove"/>
+                        <field name="days_to_remove"/>
+                    </group>
+                    <group>
+<!--                        <field name="backup_file" filename="backup_filename"/>-->
+<!--                        <field name="backup_filename" readonly="1"/>-->
+<!--                        <field name="backup_full_path" readonly="1"/>-->
+                    </group>
+                    <group>
+                        <field name="log" readonly="1"/>
+                    </group>
+
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+
+
+
+</odoo>

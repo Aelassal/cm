@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<odoo>
+
+    <record id="action_docker_instance" model="ir.actions.act_window">
+        <field name="name">Odoo Docker Instance</field>
+        <field name="res_model">odoo.docker.instance</field>
+        <field name="view_mode">kanban,list,form</field>
+         <field name="context">{'search_default_groupby_state': 1}</field>
+    </record>
+    <!-- Acción para abrir la vista de formulario -->
+
+
+    <record id="action_docker_compose_template_form" model="ir.actions.act_window">
+        <field name="name">Docker Compose Template</field>
+        <field name="res_model">docker.compose.template</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="action_docker_compose_config_form" model="ir.actions.act_window">
+        <field name="name">Config</field>
+        <field name="res_model">saas.config</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="action_instance_plan" model="ir.actions.act_window">
+        <field name="name">Instance Plans</field>
+        <field name="res_model">instance.plan</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="action_instance_backup" model="ir.actions.act_window">
+        <field name="name">Instance Backups</field>
+        <field name="res_model">odoo.instance.backup</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="action_launchly_subscription" model="ir.actions.act_window">
+        <field name="name">Subscriptions</field>
+        <field name="res_model">launchly.subscription</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_launchly_subscription_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first subscription!
+            </p>
+        </field>
+    </record>
+
+    <!-- Demo Instances Action -->
+    <record id="action_demo_instances" model="ir.actions.act_window">
+        <field name="name">Demo Instances</field>
+        <field name="res_model">odoo.docker.instance</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">[('is_demo', '=', True)]</field>
+        <field name="context">{'search_default_groupby_state': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No demo instances found!
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+
+    <!-- Menú principal -->
+    <menuitem id="menu_odoo_instance_management" name="Instance Management" sequence="10"
+              web_icon="launchly_saas,static/description/icon.png"></menuitem>
+    <menuitem id="menu_launchly_subscription"
+              name="Subscriptions"
+              parent="menu_odoo_instance_management"
+              action="action_launchly_subscription"
+              sequence="4"/>
+
+    <menuitem id="instances_all" name="All Instances" parent="menu_odoo_instance_management"
+               sequence="5"/>
+    <menuitem id="menu_odoo_instances" name="Odoo Instances" parent="instances_all"
+              action="action_docker_instance" sequence="10"/>
+
+
+    <menuitem id="menu_template" name="Templates" parent="menu_odoo_instance_management" sequence="10"
+              action="action_docker_compose_template_form"/>
+    <menuitem id="menu_config_root" name="Configurations" parent="menu_odoo_instance_management" sequence="10"/>
+    <menuitem id="menu_config" name="Configurations" parent="menu_config_root" sequence="10"
+              action="action_docker_compose_config_form"/>
+    <menuitem id="menu_plan" name="Plans" parent="menu_config_root" sequence="10"
+              action="action_instance_plan"/>
+    <menuitem id="menu_instance_backup" name="Backups" parent="menu_config_root" sequence="10"
+              action="action_instance_backup"/>
+    
+    <!-- Demo Instances Menu -->
+    <menuitem id="menu_demo_instances" name="Demo Instances" parent="instances_all" sequence="15"
+              action="action_demo_instances"/>
+</odoo>
+

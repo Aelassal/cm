@@ -1,0 +1,31 @@
+<odoo>
+    <!-- Add field to Project form -->
+    <record id="view_project_form_subscription" model="ir.ui.view">
+        <field name="name">project.project.form.subscription</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/group" position="inside">
+                <field name="subscription_id" options="{'no_create': True}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Add field to Project list/tree -->
+
+    <record id="view_project_kanban_inherit_subscription" model="ir.ui.view">
+        <field name="name">project.view_project_kanban.inherit.subscription</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project_kanban"/>
+        <field name="arch" type="xml">
+            <!-- Insert after the project name -->
+            <xpath expr="//field[@name='tag_ids']" position="before">
+                <div class="o_kanban_subtitle">
+                    <field name="subscription_id" options="{'no_open': True}"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+
+</odoo>
