@@ -1132,7 +1132,7 @@ except Exception as e:
             raise UserError("Instance can only be installed from Draft or Error state")
 
         # Get script path (same as OdooInstance)
-        script_path = '/home/abdulrahman/Downloads/odoo-install-script-main/install_odoo.sh'
+        script_path = self.config_id.script_path
 
         # Pre-installation checks
         self.add_to_log("[INFO] Starting installation pre-checks...")
