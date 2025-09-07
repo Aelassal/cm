@@ -9,7 +9,7 @@ class OdooAddonLine(models.Model):
         ('installed', 'Installed'),
         ('uninstalled', 'Uninstalled')
     ], string='State', default='uninstalled', required=True)
-    instance_id = fields.Many2one('odoo.docker.instance', string='Instance', ondelete='cascade', required=True)
+    instance_id = fields.Many2one('odoo.instance', string='Instance', ondelete='cascade', required=True)
     summary = fields.Char(string='Summary')
     latest_version = fields.Char(string='Latest Version')
     technical_name = fields.Char(string='Technical Name')

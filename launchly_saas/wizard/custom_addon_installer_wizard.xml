@@ -44,7 +44,7 @@
         <field name="res_model">custom.addon.installer.wizard</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
-        <field name="binding_model_id" ref="model_odoo_docker_instance"/>
+        <field name="binding_model_id" ref="model_odoo_instance"/>
         <field name="binding_view_types">form</field>
     </record>
 </odoo> 

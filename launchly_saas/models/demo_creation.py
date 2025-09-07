@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 
 _logger = logging.getLogger(__name__)
 
-class OdooDockerInstance(models.Model):
-    _inherit = 'odoo.docker.instance'
+class OdooInstance(models.Model):
+    _inherit = 'odoo.instance'
 
     @api.model
     def create_demo_instance_after_delay(self, post, partner_id):
@@ -56,10 +56,10 @@ class OdooDockerInstance(models.Model):
             instance.invalidate_recordset()
 
             try:
-                instance.create_docker_environment()
+                instance.create_odoo_environment()
                 instance.restart_instance()
             except Exception as e:
-                _logger.warning('Docker setup failed for demo instance %s: %s', instance.id, str(e))
+                _logger.warning('odoo setup failed for demo instance %s: %s', instance.id, str(e))
                 instance.write({'state': 'created'})
 
             # Optional: create CRM lead if crm module is installed
@@ -76,7 +76,7 @@ class OdooDockerInstance(models.Model):
                     _logger.warning("CRM lead creation failed: %s", str(e))
 
             # ✅ Send custom welcome email using _send_demo_welcome_email
-            instance_by_email = self.env['odoo.docker.instance'].sudo().search([
+            instance_by_email = self.env['odoo.instance'].sudo().search([
                 ('user_email', '=', post.get('user_email')),
                 ('is_demo', '=', True)
             ], limit=1)
@@ -141,6 +141,6 @@ The Launchly Team
 
         for instance in old_demo_instances:
             instance.sudo().write({'state': 'stopped'})
-            # Optional: also call any stop logic like stopping docker containers, etc.
+            # Optional: also call any stop logic like stopping odoo containers, etc.
             if hasattr(instance, 'stop_instance'):
                 instance.stop_instance()

@@ -1,15 +1,15 @@
 <?xml version="1.0"?>
 <odoo>
 
-    <record model="ir.ui.view" id="view_odoo_docker_instance_form">
-        <field name="name">odoo.docker.instance.form</field>
-        <field name="model">odoo.docker.instance</field>
+    <record model="ir.ui.view" id="view_odoo_instance_form">
+        <field name="name">odoo.instance.form</field>
+        <field name="model">odoo.instance</field>
         <field name="arch" type="xml">
-            <form string="Odoo Docker Instance">
+            <form string="Odoo odoo Instance">
                 <header>
-                    <button string="Create Docker Environment" invisible="state not in ('draft', 'error')" type="object" name="create_docker_environment"
+                    <button string="Create odoo Environment" invisible="state not in ('draft', 'error')" type="object" name="create_odoo_environment"
                             class="oe_highlight o_button_icon o_icon_check"
-                            confirm="This will create the Docker environment. Are you sure you want to proceed?"/>
+                            confirm="This will create the odoo environment. Are you sure you want to proceed?"/>
 <!--                    <button string="Initiate Instance" invisible="state in ('running')" type="object" name="start_instance"-->
 <!--                            class="oe_highlight o_button_icon o_icon_play"/>-->
                     <button string="Setup User" invisible="state != 'running'" type="object" name="setup_user_manually"
@@ -307,15 +307,15 @@
                         </page>
                         <page string="DB Logs">
                             <div class="oe_button_box" style="margin-bottom: 10px;">
-                                <button string="Refresh Logs" type="object" name="refresh_docker_logs" 
+                                <button string="Refresh Logs" type="object" name="refresh_odoo_logs"
                                         class="btn btn-primary o_button_icon" 
                                         icon="fa-refresh"/>
-                                <button string="Clear DB Logs" type="object" name="clear_docker_logs" 
+                                <button string="Clear DB Logs" type="object" name="clear_odoo_logs"
                                         class="btn btn-warning o_button_icon" 
                                         icon="fa-trash"
-                                        confirm="Are you sure you want to clear the Docker logs? This action cannot be undone."/>
+                                        confirm="Are you sure you want to clear the odoo logs? This action cannot be undone."/>
                             </div>
-                            <field name="docker_logs" colspan="4" nolabel="1"
+                            <field name="odoo_logs" colspan="4" nolabel="1"
                                    style="width: 100%; height: 600px; overflow-y: auto; color: rgb(0,255,0); background: black; font-family: monospace; white-space: pre-wrap;"
                                    widget="text" readonly="1"/>
                         </page>
@@ -387,9 +387,9 @@ logfile = /var/log/odoo/odoo.log
     </record>
 
 
-    <record model="ir.ui.view" id="view_odoo_docker_instance_kanban">
-        <field name="name">odoo.docker.instance.kanban</field>
-        <field name="model">odoo.docker.instance</field>
+    <record model="ir.ui.view" id="view_odoo_instance_kanban">
+        <field name="name">odoo.instance.kanban</field>
+        <field name="model">odoo.instance</field>
         <field name="arch" type="xml">
             <kanban class="o_kanban_mobile" archivable="false">
                 <field name="state"/>

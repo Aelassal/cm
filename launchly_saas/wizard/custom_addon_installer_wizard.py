@@ -9,7 +9,7 @@ class CustomAddonInstallerWizard(models.TransientModel):
     _name = 'custom.addon.installer.wizard'
     _description = 'Custom Addon Installer Wizard'
 
-    instance_id = fields.Many2one('odoo.docker.instance', string='Instance', required=True)
+    instance_id = fields.Many2one('odoo.instance', string='Instance', required=True)
     addon_line_ids = fields.Many2many('custom.addon.line', string='Addons to Install',
                                       domain="[('instance_id', '=', instance_id), ('is_extracted', '=', True)]")
     install_method = fields.Selection([
@@ -48,6 +48,6 @@ class CustomAddonInstallerWizard(models.TransientModel):
     def default_get(self, fields):
         """Set default values from context"""
         res = super().default_get(fields)
-        if self.env.context.get('active_model') == 'odoo.docker.instance':
+        if self.env.context.get('active_model') == 'odoo.instance':
             res['instance_id'] = self.env.context.get('active_id')
         return res 

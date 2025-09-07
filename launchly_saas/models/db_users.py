@@ -4,7 +4,7 @@ class OdooDbUser(models.Model):
     _description = 'Odoo Database User'
     _rec_name = 'name'
 
-    instance_id = fields.Many2one('odoo.docker.instance', string='Instance', required=True, ondelete='cascade')
+    instance_id = fields.Many2one('odoo.instance', string='Instance', required=True, ondelete='cascade')
     user_id = fields.Integer(string='User ID', help="User ID in the database")
     login = fields.Char(string='Login', required=True)
     email = fields.Char(string='Email')

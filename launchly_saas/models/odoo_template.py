@@ -9,10 +9,9 @@ from odoo.exceptions import UserError, ValidationError
 _logger = logging.getLogger(__name__)
 
 
-# Docker Compose Template Autor David Montero Crespo
-class DockerComposeTemplate(models.Model):
-    _name = 'docker.compose.template'
-    _description = 'Docker Compose Template'
+class OdooTemplate(models.Model):
+    _name = 'odoo.template'
+    _description = 'odoo Compose Template'
     _order = 'sequence asc, id'
 
     _sql_constraints = [

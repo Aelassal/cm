@@ -6,7 +6,7 @@
         <!-- Cron Job for checking active users every 10 minutes -->
         <record id="cron_check_active_users" model="ir.cron">
             <field name="name">Check Active Users</field>
-            <field name="model_id" ref="model_odoo_docker_instance"/>
+            <field name="model_id" ref="model_odoo_instance"/>
             <field name="state">code</field>
             <field name="code">model.cron_check_active_users()</field>
             <field name="interval_number">1</field>
@@ -16,7 +16,7 @@
         </record>
         <record id="ir_cron_stop_old_demo_instances" model="ir.cron">
             <field name="name">Stop Old Demo Instances</field>
-            <field name="model_id" ref="model_odoo_docker_instance"/>
+            <field name="model_id" ref="model_odoo_instance"/>
             <field name="state">code</field>
             <field name="code">model.cron_stop_old_demo_instances()</field>
             <field name="interval_number">1</field>

@@ -141,7 +141,7 @@ class SubscriptionAPI(http.Controller):
             }
 
             # Create demo instance
-            instance = request.env['odoo.docker.instance'].sudo().create_demo_instance_after_delay(post_data,
+            instance = request.env['odoo.instance'].sudo().create_demo_instance_after_delay(post_data,
                                                                                                    partner.id)
 
             return {

@@ -10,4 +10,5 @@ class SaasConfig(models.Model):
     backup_path = fields.Char(string='Backup Path', help='Base directory for instance backups')
     domain = fields.Char(string='Domain', help='Domain for the SaaS instances')
     ssl_email = fields.Char(string='SSL Email', help='Email for SSL certificate registration')
-    instance_id = fields.Many2one('odoo.docker.instance', string='Default Instance')
+    instance_id = fields.Many2one('odoo.instance', string='Default Instance')
+    script_path = fields.Char

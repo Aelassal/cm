@@ -9,9 +9,9 @@ class InstancePlan(models.Model):
     allowed_users_count = fields.Integer(string='Allowed Users Count', default=1)
     allowed_modules_count = fields.Integer(string='Allowed Modules Count', default=100)
     template_id = fields.Many2one(
-        'docker.compose.template',
-        string='Docker Compose Template',
-        help='Select a docker compose template for this plan.'
+        'odoo.template',
+        string='odoo Compose Template',
+        help='Select a odoo compose template for this plan.'
     )
     config_id = fields.Many2one(
         'saas.config',
@@ -32,7 +32,7 @@ class InstancePlan(models.Model):
 
     # Computed field to get the instance ID for domain filtering
     instance_id_for_domain = fields.Many2one(
-        'odoo.docker.instance',
+        'odoo.instance',
         string='Instance for Domain',
         compute='_compute_instance_id_for_domain',
         store=False
@@ -77,4 +77,4 @@ class InstancePlan(models.Model):
         string='Odoo Addons',
         help='Select Odoo addons from any instance to include in this plan.'
     )
-    instance_ids = fields.One2many('odoo.docker.instance', 'plan_id', string='Instances Using This Plan') 
+    instance_ids = fields.One2many('odoo.instance', 'plan_id', string='Instances Using This Plan') 

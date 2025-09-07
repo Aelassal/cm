@@ -15,7 +15,7 @@ class CustomAddonLine(models.Model):
     _description = 'Custom Addon Line'
     _rec_name = 'addon_name'
 
-    instance_id = fields.Many2one('odoo.docker.instance', string='Instance', required=True, ondelete='cascade')
+    instance_id = fields.Many2one('odoo.instance', string='Instance', required=True, ondelete='cascade')
     addon_name = fields.Char(string='Addon Name', readonly=True, help="Auto-detected from manifest file")
     
     # Upload methods
@@ -505,7 +505,7 @@ class CustomAddonLine(models.Model):
                         else:
                             # No sudo password available
                             _logger.error(f"[LAUNCHLY_SAAS - {record.instance_id.name}] Permission denied and no sudo password available")
-                            raise UserError(_("Permission denied: Cannot remove files created by Docker containers. Please provide sudo password in instance settings."))
+                            raise UserError(_("Permission denied: Cannot remove files created by odoo containers. Please provide sudo password in instance settings."))
                 
                 # Remove the record
                 record.unlink()
@@ -549,7 +549,7 @@ class CustomAddonLine(models.Model):
         """Manual action to apply addon changes"""
         for record in self:
             if record.instance_id.state == 'draft':
-                raise UserError(_("Instance is in draft state. Please create Docker environment first."))
+                raise UserError(_("Instance is in draft state. Please create odoo environment first."))
             
             record.instance_id.apply_custom_addons_changes()
         

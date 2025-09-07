@@ -1,6 +1,6 @@
-from . import docker_compose_template
+from . import odoo_template
 
-from . import odoo_docker_instance
+from . import odoo_instance
 
 from . import custom_addon_line
 from . import db_users

@@ -32,7 +32,7 @@ class OdooInstanceBackup(models.Model):
         ('failed', 'Failed')
     ], string='Status', default='draft')
     log = fields.Text(string='Log', readonly=True)
-    instance_ids = fields.Many2many('odoo.docker.instance', string='Instances to Backup')
+    instance_ids = fields.Many2many('odoo.instance', string='Instances to Backup')
     backup_path = fields.Char(string='Backup Directory', required=True, help='Directory on the server where backup files will be saved')
     backup_full_path = fields.Char(string='Backup File Path', readonly=True)
     auto_remove = fields.Boolean(string='Remove Old Backups', help='Automatically remove old backups')
@@ -52,7 +52,7 @@ class OdooInstanceBackup(models.Model):
             backup_files = []
             for instance in rec.instance_ids:
                 try:
-                    # Direct systemd service backup (no Docker containers)
+                    # Direct systemd service backup (no odoo containers)
                     db_name = instance.database_name
                     # Database user is derived from company name (same as in installation script)
                     import re

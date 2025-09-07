@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <!-- Vista de Lista para DockerComposeTemplate -->
-        <record id="view_docker_compose_template_list" model="ir.ui.view">
-            <field name="name">docker.compose.template.list</field>
-            <field name="model">docker.compose.template</field>
+        <!-- Vista de Lista para odooComposeTemplate -->
+        <record id="view_odoo_template_list" model="ir.ui.view">
+            <field name="name">odoo.template.list</field>
+            <field name="model">odoo.template</field>
             <field name="arch" type="xml">
                 <list>
                     <field name="sequence" widget="handle"/>
@@ -15,9 +15,9 @@
                 </list>
             </field>
         </record>
-        <record id="view_docker_compose_template_form" model="ir.ui.view">
-            <field name="name">docker.compose.template.form</field>
-            <field name="model">docker.compose.template</field>
+        <record id="view_odoo_template_form" model="ir.ui.view">
+            <field name="name">odoo.template.form</field>
+            <field name="model">odoo.template</field>
             <field name="arch" type="xml">
                 <form>
 

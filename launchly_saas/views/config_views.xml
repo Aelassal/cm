@@ -9,6 +9,7 @@
                 <field name="backup_path"/>
                 <field name="instance_id"/>
                 <field name="domain"/>
+                <field name="script_path"/>
             </list>
         </field>
     </record>
@@ -25,6 +26,7 @@
                         <field name="backup_path" required="1"/>
                         <field name="instance_id"/>
                         <field name="domain"/>
+                        <field name="script_path"/>
                         <field name="ssl_email" required="domain != False" invisible="domain == False"/>
                     </group>
                 </sheet>

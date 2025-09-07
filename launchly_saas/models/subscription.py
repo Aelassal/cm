@@ -16,7 +16,7 @@ class Subscription(models.Model):
     partner_id = fields.Many2one('res.partner', string='Customer', required=True, ondelete='cascade')
     partner_email = fields.Char(string='Customer Email', related='partner_id.email', store=True)
     sale_order_id = fields.Many2one('sale.order', string='Sale Order', ondelete='cascade', readonly=True)
-    instance_id = fields.Many2one('odoo.docker.instance', string='Instance', ondelete='cascade', readonly=True)
+    instance_id = fields.Many2one('odoo.instance', string='Instance', ondelete='cascade', readonly=True)
     plan_id = fields.Many2one('instance.plan', string='Plan', required=True, ondelete='cascade')
     allowed_users_count = fields.Integer(string='Allowed Users Count', related='plan_id.allowed_users_count')
     allowed_modules_count = fields.Integer(string='Allowed Modules Count', related='plan_id.allowed_modules_count')
@@ -106,11 +106,11 @@ class Subscription(models.Model):
             subscription.project_id = project.id
 
         if subscription.state == 'active':
-            subscription._create_docker_instance()
+            subscription._create_odoo_instance()
 
         return subscription
-    def _create_docker_instance(self):
-        """Automatically create a Docker instance for this subscription."""
+    def _create_odoo_instance(self):
+        """Automatically create a odoo instance for this subscription."""
         self.ensure_one()
 
         partner = self.partner_id
@@ -135,7 +135,7 @@ class Subscription(models.Model):
                 'subdomain_name': self.subdomain
             })
 
-        instance = self.env['odoo.docker.instance'].with_context(skip_template_apply=True).create(instance_vals)
+        instance = self.env['odoo.instance'].with_context(skip_template_apply=True).create(instance_vals)
 
         if not instance.http_port:
             instance.http_port = instance._get_available_port()
@@ -160,11 +160,11 @@ class Subscription(models.Model):
         instance._compute_instance_url()
         instance._compute_config_id()
         instance.invalidate_recordset()
-        instance.create_docker_environment()
+        instance.create_odoo_environment()
         instance.restart_instance()
 
         self.instance_id = instance.id
-        _logger.info('Docker instance %s created for subscription %s', instance.name, self.name)
+        _logger.info('odoo instance %s created for subscription %s', instance.name, self.name)
 
     def action_cancel_subscription(self):
         self.write({'state': 'cancelled'})

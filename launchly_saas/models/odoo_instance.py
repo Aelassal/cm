@@ -19,14 +19,16 @@ from odoo.exceptions import ValidationError, UserError
 _logger = logging.getLogger(__name__)
 
 
-class OdooDockerInstance(models.Model):
-    _name = 'odoo.docker.instance'
-    _inherit = "docker.compose.template"
-    _description = 'Odoo Docker Instance'
+class OdooInstance(models.Model):
+    _name = 'odoo.instance'
+    _inherit = "odoo.template"
+    _description = 'Odoo odoo Instance'
 
     name = fields.Char(string='Instance Name', required=True)
-    state = fields.Selection([('draft', 'Draft'), ('stopped', 'Stopped'), ('running', 'Running'),('installing','Installing'),('installed','Installed'), ('error', 'Error')],
-                             string='State', default='draft')
+    state = fields.Selection(
+        [('draft', 'Draft'), ('stopped', 'Stopped'), ('running', 'Running'), ('installing', 'Installing'),
+         ('installed', 'Installed'), ('error', 'Error')],
+        string='State', default='draft')
 
     # User Information Fields
     user_email = fields.Char(string='User Email', required=True,
@@ -48,13 +50,13 @@ class OdooDockerInstance(models.Model):
     instance_url = fields.Char(string='Instance URL', compute='_compute_instance_url', store=True)
     custom_addon_line = fields.One2many('custom.addon.line', 'instance_id', string='Custom Addons')
     log = fields.Html(string='Log')
-    docker_logs = fields.Text(string='Docker Container Logs', readonly=True)
+    odoo_logs = fields.Text(string='Odoo Service Logs', readonly=True)
     odoo_conf_content = fields.Text(string='Odoo Configuration File Content',
                                     help="Content of the odoo.conf file")
     addons_path = fields.Char(string='Addons Path', related='template_id.source_path', store=True)
     user_path = fields.Char(string='User Path', compute='_compute_user_path', store=True)
     instance_data_path = fields.Char(string='Instance Data Path', compute='_compute_user_path', store=True)
-    template_id = fields.Many2one('docker.compose.template', string='Template')
+    template_id = fields.Many2one('odoo.template', string='Template')
 
     root_sudo_password = fields.Char(string='Root Sudo Password', related='config_id.sudo_password')
     user_done = fields.Boolean(string='User Setup Done', default=False,
@@ -100,7 +102,7 @@ class OdooDockerInstance(models.Model):
     odoo_addon_line_ids = fields.Many2many(
         'odoo.addon.line',
         'instance_odoo_addon_rel',  # relation table
-        'instance_id',  # link to odoo.docker.instance
+        'instance_id',  # link to odoo.instance
         'odoo_addon_id',  # link to odoo.addon.line
         string='Odoo Addons',
         help='Select Odoo addons included in this instance.',
@@ -109,23 +111,23 @@ class OdooDockerInstance(models.Model):
     # custom_addon_line_ids = fields.Many2many(
     #     'custom.addon.line',
     #     'instance_odoo_custom_addon_rel',  # relation table
-    #     'instance_id',  # link to odoo.docker.instance
+    #     'instance_id',  # link to odoo.instance
     #     'custom_addon_id',  # link to odoo.addon.line
     #     string='Custom Addons',
     #     help='Select Custom addons included in this instance.',
     #
     # )
     storage_usage = fields.Char(string="Storage Usage", readonly=True,
-                                help="Storage space used by containers (e.g., 1.2GB / 10GB)")
+                                help="Storage space used by instance (e.g., 1.2GB / 10GB)")
     cpu_usage_percent = fields.Float(string="CPU Usage (%)", readonly=True,
-                                     help="Total CPU usage percent of instance containers")
+                                     help="Total CPU usage percent of instance service")
     memory_usage_percent = fields.Float(string="Memory Usage (%)", readonly=True,
-                                        help="Total memory usage percent of instance containers")
+                                        help="Total memory usage percent of instance service")
     memory_usage = fields.Char(string="Memory Usage (used/total)", readonly=True,
                                help="Memory usage in bytes, e.g. 50MiB / 2GiB")
     net_io = fields.Char(string="Network I/O", readonly=True, help="Network I/O usage")
     block_io = fields.Char(string="Block I/O", readonly=True, help="Block I/O usage")
-    pids_count = fields.Integer(string="PIDs", readonly=True, help="Number of PIDs used by instance containers")
+    pids_count = fields.Integer(string="PIDs", readonly=True, help="Number of PIDs used by instance service")
 
     # Helper computed fields for progress bars (0-100)
     cpu_usage_bar = fields.Integer(string="CPU Usage Bar (%)", compute="_compute_cpu_usage_bar", store=False)
@@ -138,6 +140,7 @@ class OdooDockerInstance(models.Model):
             # Add plan's addons + existing selected addons
             all_addons = self.odoo_addon_line_ids | self.plan_id.odoo_addon_line_ids
             self.odoo_addon_line_ids = all_addons
+
     @api.depends('cpu_usage_percent')
     def _compute_cpu_usage_bar(self):
         for rec in self:
@@ -148,24 +151,23 @@ class OdooDockerInstance(models.Model):
         for rec in self:
             rec.memory_usage_bar = min(100, max(0, int(rec.memory_usage_percent)))
 
-
     def _parse_size_to_bytes(self, size_str):
         """Convert size string like '39 MB' or '29M' to bytes."""
         if not size_str or size_str in ['N/A', '0B']:
             return 0
-        
+
         size_str = size_str.strip().upper()
         match = re.match(r'^(\d+(?:\.\d+)?)\s*([KMGTPE]?B?)$', size_str)
         if not match:
             return 0
-        
+
         number = float(match.group(1))
         unit = match.group(2)
-        
+
         multipliers = {
-            'B': 1, 'K': 1024, 'KB': 1024, 'M': 1024**2, 'MB': 1024**2,
-            'G': 1024**3, 'GB': 1024**3, 'T': 1024**4, 'TB': 1024**4,
-            'P': 1024**5, 'PB': 1024**5, 'E': 1024**6, 'EB': 1024**6,
+            'B': 1, 'K': 1024, 'KB': 1024, 'M': 1024 ** 2, 'MB': 1024 ** 2,
+            'G': 1024 ** 3, 'GB': 1024 ** 3, 'T': 1024 ** 4, 'TB': 1024 ** 4,
+            'P': 1024 ** 5, 'PB': 1024 ** 5, 'E': 1024 ** 6, 'EB': 1024 ** 6,
         }
         return int(number * multipliers.get(unit, 1))
 
@@ -173,27 +175,27 @@ class OdooDockerInstance(models.Model):
         """Convert bytes to human readable format."""
         if bytes_size == 0:
             return "0B"
-        
+
         units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
         unit_index = 0
         size = float(bytes_size)
-        
+
         while size >= 1024 and unit_index < len(units) - 1:
             size /= 1024
             unit_index += 1
-        
+
         return f"{int(size)}{units[unit_index]}" if size == int(size) else f"{size:.1f}{units[unit_index]}"
 
     def _get_filestore_size(self):
         """Get the size of the filestore directory."""
         try:
             filestore_path = f'/opt/{self.name}/data/filestore/{self.database_name}'
-            
+
             # Check if directory exists
             check_result = self.excute_command_with_sudo(f"test -d {filestore_path}", check=False)
             if check_result.returncode != 0:
                 return "0B"
-            
+
             # Get directory size
             result = self.excute_command_with_sudo(f"du -sh {filestore_path}", check=False)
             if result.returncode == 0 and result.stdout:
@@ -222,25 +224,25 @@ class OdooDockerInstance(models.Model):
             # Check if database exists
             check_cmd = f"-u postgres psql -d postgres -t -c \"SELECT 1 FROM pg_database WHERE datname = '{db_name}';\""
             check_result = self.excute_command_with_sudo(check_cmd, check=False)
-            
+
             if check_result.returncode != 0 or not check_result.stdout.strip():
                 filestore_size = self._get_filestore_size()
                 total_size = self._calculate_total_storage_size("0B", filestore_size)
                 return f"{total_size} (0B + {filestore_size} filestore)"
-            
+
             # Get database size
             query_cmd = f"-u postgres psql -d postgres -t -c \"SELECT pg_size_pretty(pg_database_size('{db_name}'));\""
             db_result = self.excute_command_with_sudo(query_cmd, check=False)
-            
+
             if db_result.returncode != 0:
                 return "N/A"
-                
+
             db_size = db_result.stdout.strip() or "0B"
             filestore_size = self._get_filestore_size()
             total_size = self._calculate_total_storage_size(db_size, filestore_size)
-            
+
             return f"{total_size} ({db_size} + {filestore_size} filestore)"
-            
+
         except Exception:
             return "N/A"
 
@@ -248,24 +250,24 @@ class OdooDockerInstance(models.Model):
         self.ensure_one()
         usage = {
             "cpu": 0.0, "mem_percent": 0.0, "mem_usage": "", "net_io": "N/A (systemd)",
-            "block_io": "N/A (systemd)", "pids": 0, "containers_count": 1, "storage_usage": ""
+            "block_io": "N/A (systemd)", "pids": 0, "services_count": 1, "storage_usage": ""
         }
 
         try:
             service_name = f"{self.name}.service"
-            
+
             # Check if service is active
-            status_result = subprocess.run(["sudo", "systemctl", "is-active", service_name], 
-                                         capture_output=True, text=True)
-            
+            status_result = subprocess.run(["sudo", "systemctl", "is-active", service_name],
+                                           capture_output=True, text=True)
+
             if status_result.returncode != 0 or status_result.stdout.strip() != "active":
                 usage["storage_usage"] = self._get_db_size()
                 return usage
 
             # Get main PID
-            pid_result = subprocess.run(["sudo", "systemctl", "show", service_name, 
-                                       "--property=MainPID", "--value"], 
-                                      capture_output=True, text=True)
+            pid_result = subprocess.run(["sudo", "systemctl", "show", service_name,
+                                         "--property=MainPID", "--value"],
+                                        capture_output=True, text=True)
             main_pid = pid_result.stdout.strip()
 
             if not main_pid or main_pid == "0":
@@ -274,8 +276,8 @@ class OdooDockerInstance(models.Model):
 
             # Get main process stats
             ps_result = subprocess.run(["ps", "--no-headers", "-o", "pid,ppid,%cpu,%mem,vsz,rss", "-p", main_pid],
-                                     capture_output=True, text=True)
-            
+                                       capture_output=True, text=True)
+
             if ps_result.stdout.strip():
                 parts = ps_result.stdout.strip().split()
                 if len(parts) >= 6:
@@ -286,8 +288,8 @@ class OdooDockerInstance(models.Model):
 
             # Get child processes stats
             children_result = subprocess.run(["ps", "--no-headers", "-o", "pid,%cpu,%mem", "--ppid", main_pid],
-                                           capture_output=True, text=True)
-            
+                                             capture_output=True, text=True)
+
             if children_result.returncode == 0 and children_result.stdout.strip():
                 for line in children_result.stdout.strip().split('\n'):
                     parts = line.strip().split()
@@ -305,10 +307,9 @@ class OdooDockerInstance(models.Model):
 
     def update_resource_fields(self):
         for instance in self:
-
             usage = instance.get_instance_resource_usage()
             instance.cpu_usage_percent = usage["cpu"]
-            instance.memory_usage_percent = usage["mem_percent"] 
+            instance.memory_usage_percent = usage["mem_percent"]
             instance.memory_usage = usage["mem_usage"]
             instance.net_io = usage["net_io"]
             instance.block_io = usage["block_io"]
@@ -316,6 +317,7 @@ class OdooDockerInstance(models.Model):
             instance.storage_usage = usage["storage_usage"]
             instance._compute_cpu_usage_bar()
             instance._compute_memory_usage_bar()
+
     @api.constrains('odoo_addon_line_ids', 'allowed_modules_count')
     def _check_allowed_modules_count(self):
         for record in self:
@@ -334,10 +336,6 @@ class OdooDockerInstance(models.Model):
                 record.config_id = self.env['saas.config'].search([], limit=1)
             else:
                 record.config_id = False
-
-
-
-
 
     @api.onchange('name')
     def onchange_name(self):
@@ -358,8 +356,6 @@ class OdooDockerInstance(models.Model):
             # data path is /opt/<instance_name>/data
             instance.instance_data_path = os.path.join(instance.user_path, 'data')
 
-
-
     def add_to_log(self, message):
         """Agrega un mensaje al registro (log) y lo limpia si supera 1000 caracteres."""
         # Log to Odoo backend for debugging
@@ -368,7 +364,6 @@ class OdooDockerInstance(models.Model):
         now = datetime.now()
         new_log = "</br> \n#" + str(now.strftime("%m/%d/%Y, %H:%M:%S")) + " " + str(message) + " " + str(self.log)
         if len(new_log) > 10000:
-
             new_log = "</br>" + str(now.strftime("%m/%d/%Y, %H:%M:%S")) + " " + str(message)
         self.log = new_log
 
@@ -382,7 +377,7 @@ class OdooDockerInstance(models.Model):
         #     'tag': 'reload',
         # }
 
-    def refresh_docker_logs(self):
+    def refresh_odoo_logs(self):
         """Refresh systemd service logs from journalctl and log files"""
         for instance in self:
             try:
@@ -419,14 +414,14 @@ class OdooDockerInstance(models.Model):
                 except Exception as log_error:
                     logs += f"\n=== ODOO LOG FILE ===\nError reading log file: {str(log_error)}"
 
-                instance.docker_logs = logs if logs else "No logs available"
+                instance.odoo_logs = logs if logs else "No logs available"
                 _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Systemd logs refreshed successfully")
 
             except subprocess.TimeoutExpired:
-                instance.docker_logs = "Timeout while fetching systemd logs"
+                instance.odoo_logs = "Timeout while fetching systemd logs"
                 _logger.error(f"[LAUNCHLY_SAAS - {instance.name}] Timeout while fetching systemd logs")
             except Exception as e:
-                instance.docker_logs = f"Error fetching systemd logs: {str(e)}"
+                instance.odoo_logs = f"Error fetching systemd logs: {str(e)}"
                 _logger.error(f"[LAUNCHLY_SAAS - {instance.name}] Error fetching systemd logs: {str(e)}")
 
         # return {
@@ -434,10 +429,10 @@ class OdooDockerInstance(models.Model):
         #     'tag': 'reload',
         # }
 
-    def clear_docker_logs(self):
-        """Clear the docker_logs field for selected instances"""
+    def clear_odoo_logs(self):
+        """Clear the odoo_logs field for selected instances"""
         for instance in self:
-            instance.docker_logs = ""
+            instance.odoo_logs = ""
             _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Service logs cleared by user")
         # return {
         #     'type': 'ir.actions.client',
@@ -473,7 +468,8 @@ class OdooDockerInstance(models.Model):
                         except PermissionError:
                             instance.odoo_conf_content = "# Configuration file exists but requires sudo access\n# Please provide root_sudo_password to load configuration"
                             instance.add_to_log(f"[WARNING] Configuration file requires sudo access: {conf_file_path}")
-                            _logger.warning(f"[LAUNCHLY_SAAS - {instance.name}] Configuration file requires sudo access")
+                            _logger.warning(
+                                f"[LAUNCHLY_SAAS - {instance.name}] Configuration file requires sudo access")
                 else:
                     instance.odoo_conf_content = "# Configuration file not found\n# Please create the instance first"
                     instance.add_to_log(f"[WARNING] Configuration file not found at: {conf_file_path}")
@@ -521,9 +517,11 @@ class OdooDockerInstance(models.Model):
 
                         # If the instance is running, restart the service to apply changes
                         if instance.state == 'running':
-                            instance.add_to_log("[INFO] Configuration saved. Restarting Odoo service to apply changes...")
+                            instance.add_to_log(
+                                "[INFO] Configuration saved. Restarting Odoo service to apply changes...")
                             try:
-                                restart_result = instance.excute_command_with_sudo(f"systemctl restart {instance.name}.service")
+                                restart_result = instance.excute_command_with_sudo(
+                                    f"systemctl restart {instance.name}.service")
                                 if restart_result.returncode == 0:
                                     instance.add_to_log("[INFO] Odoo service restarted successfully")
                                 else:
@@ -571,7 +569,7 @@ class OdooDockerInstance(models.Model):
     def _get_available_port(self, start_port=8069, end_port=9000):
         # Define el rango de puertos en el que deseas buscar disponibles
         # buscar todos los puertos de las instancias
-        instances = self.env['odoo.docker.instance'].search([])
+        instances = self.env['odoo.instance'].search([])
         # crear una lista con los puertos de las instancias
         ports = []
         for instance in instances:
@@ -597,13 +595,8 @@ class OdooDockerInstance(models.Model):
                 sock.close()
         self.add_to_log("[ERROR] No se encontraron puertos disponibles en el rango especificado.")
 
-
-
-
-
-
     def _create_host_directories(self):
-        """Create host directories with proper permissions for Odoo container using sudo"""
+        """Create host directories with proper permissions for Odoo service using sudo"""
         for instance in self:
             _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Creating host directories with sudo permissions")
 
@@ -660,7 +653,7 @@ class OdooDockerInstance(models.Model):
                 except Exception as e:
                     _logger.warning(f"[LAUNCHLY_SAAS - {instance.name}] Could not set sudo permissions: {str(e)}")
                     instance.add_to_log(f"[WARNING] Could not set sudo permissions: {str(e)}")
-                    instance.add_to_log("[INFO] Docker will handle internal permissions")
+                    instance.add_to_log("[INFO] odoo will handle internal permissions")
             else:
                 # Fallback without sudo
                 try:
@@ -675,9 +668,9 @@ class OdooDockerInstance(models.Model):
 
                 except Exception as e:
                     _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Could not set host permissions: {str(e)}")
-                    instance.add_to_log("[INFO] Host directories created - Docker will handle internal permissions")
+                    instance.add_to_log("[INFO] Host directories created - odoo will handle internal permissions")
 
-            instance.add_to_log("[INFO] Directory permissions configured for Docker containers")
+            instance.add_to_log("[INFO] Directory permissions configured for odoo service")
 
     def _setup_custom_addons(self):
         """Setup custom addons for the instance"""
@@ -755,14 +748,16 @@ class OdooDockerInstance(models.Model):
                                             f"[LAUNCHLY_SAAS - {instance.name}] Sudo command failed: {cmd}, Error: {result.stderr}")
                                         raise Exception(f"Sudo command failed: {result.stderr}")
                                     else:
-                                        _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Sudo command successful: {cmd}")
+                                        _logger.info(
+                                            f"[LAUNCHLY_SAAS - {instance.name}] Sudo command successful: {cmd}")
 
                                 _logger.info(
                                     f"[LAUNCHLY_SAAS - {instance.name}] Custom addons directory removed using sudo")
                                 instance.add_to_log("[SUCCESS] Custom addons directory cleaned using sudo")
 
                             except Exception as sudo_error:
-                                _logger.error(f"[LAUNCHLY_SAAS - {instance.name}] Sudo removal failed: {str(sudo_error)}")
+                                _logger.error(
+                                    f"[LAUNCHLY_SAAS - {instance.name}] Sudo removal failed: {str(sudo_error)}")
                                 instance.add_to_log(
                                     f"[ERROR] Failed to clean custom addons with sudo: {str(sudo_error)}")
                                 instance.add_to_log(
@@ -773,7 +768,7 @@ class OdooDockerInstance(models.Model):
                             _logger.error(
                                 f"[LAUNCHLY_SAAS - {instance.name}] Permission denied and no sudo password available")
                             instance.add_to_log(
-                                "[ERROR] Permission denied: Cannot remove files created by Docker containers")
+                                "[ERROR] Permission denied: Cannot remove files created by odoo")
                             instance.add_to_log(
                                 "[INFO] Please provide sudo password in instance settings or manually remove the files")
                             instance.add_to_log(f"[INFO] Manual command: sudo rm -rf {custom_addons_dir}")
@@ -806,7 +801,8 @@ class OdooDockerInstance(models.Model):
                         instance.add_to_log(f"[SUCCESS] Processed custom addon: {addon.addon_name}")
                     except Exception as e:
                         instance.add_to_log(f"[ERROR] Failed to process custom addon {addon.addon_name}: {str(e)}")
-                        _logger.error(f"[LAUNCHLY_SAAS - {instance.name}] Failed to process custom addon {addon.addon_name}: {str(e)}")
+                        _logger.error(
+                            f"[LAUNCHLY_SAAS - {instance.name}] Failed to process custom addon {addon.addon_name}: {str(e)}")
             else:
                 instance.add_to_log("[INFO] No pending custom addons to process")
 
@@ -817,7 +813,7 @@ class OdooDockerInstance(models.Model):
             instance.add_to_log("[INFO] Applying custom addon changes...")
 
             if instance.state == 'draft':
-                instance.add_to_log("[WARNING] Instance is in draft state. Please create Docker environment first.")
+                instance.add_to_log("[WARNING] Instance is in draft state. Please create odoo environment first.")
                 continue
 
             try:
@@ -1038,7 +1034,7 @@ except Exception as e:
 
         return "Unknown error - check full log for details"
 
-    def create_docker_environment(self):
+    def create_odoo_environment(self):
         """Create the complete Odoo environment using bash script installation"""
         for instance in self:
             _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Creating Odoo environment")
@@ -1062,7 +1058,7 @@ except Exception as e:
                 _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Creating host directories...")
                 instance._create_host_directories()
 
-                # Execute bash script installation instead of docker-compose
+                # Execute bash script installation instead of odoo-compose
                 _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Running bash script installation...")
                 installation_result = instance._execute_bash_installation()
 
@@ -1071,8 +1067,6 @@ except Exception as e:
                 instance.add_to_log("[INFO] Checking repository requirements...")
 
                 # Count total repositories and categorize them
-
-
 
                 # Setup custom addons (odoo.conf is created by bash script)
                 _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Setting up custom addons...")
@@ -1087,7 +1081,8 @@ except Exception as e:
                 instance.add_to_log(f"[INFO] Login Password: {user_login_password}")
                 instance.add_to_log(f"[INFO] Admin Master Password: {instance.admin_password}")
                 # Fix typo in company name display
-                display_company = instance.company_name.replace('Abdulrahamn', 'Abdulrahman') if instance.company_name else ''
+                display_company = instance.company_name.replace('Abdulrahamn',
+                                                                'Abdulrahman') if instance.company_name else ''
                 instance.add_to_log(f"[INFO] Company: {display_company}")
                 instance.add_to_log(f"[INFO] Country: {instance.country_id.name if instance.country_id else 'Not set'}")
 
@@ -1097,10 +1092,10 @@ except Exception as e:
 
                 # Set state to stopped (ready to start)
                 # instance.write({'state': 'stopped'})
-                # Docker compose cleanup no longer needed with bash script installation
+                # odoo compose cleanup no longer needed with bash script installation
                 instance.start_instance()
 
-                _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Docker environment created successfully")
+                _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] odoo environment created successfully")
                 if instance.includes_subdomain and instance.subdomain_name:
                     _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Creating subdomain configuration")
                     instance.add_to_log("[INFO] Creating subdomain configuration...")
@@ -1137,7 +1132,7 @@ except Exception as e:
             raise UserError("Instance can only be installed from Draft or Error state")
 
         # Get script path (same as OdooInstance)
-        script_path = '/home/abdulrahman/Downloads/odoo-install-script-main/install_odoo.sh'
+        script_path = self.config_id.script_path
 
         # Pre-installation checks
         self.add_to_log("[INFO] Starting installation pre-checks...")
@@ -1329,9 +1324,11 @@ except Exception as e:
                 for line in stdout_lines[-10:]:
                     self.add_to_log(f"[OUT]: {line}")
 
-                _logger.error(f"[LAUNCHLY_SAAS - {self.name}] Installation failed with code {return_code}: {error_analysis}")
+                _logger.error(
+                    f"[LAUNCHLY_SAAS - {self.name}] Installation failed with code {return_code}: {error_analysis}")
 
-                raise UserError(f"Installation failed (Code {return_code}): {error_analysis}\nCheck installation log for details.")
+                raise UserError(
+                    f"Installation failed (Code {return_code}): {error_analysis}\nCheck installation log for details.")
 
         except Exception as e:
             self.state = 'error'
@@ -1354,7 +1351,6 @@ except Exception as e:
         paths.append(f"/opt/{self.name}/custom-addons")
 
         # Add repository paths (these will be cloned after installation)
-
 
         return ",".join(paths)
 
@@ -1478,7 +1474,8 @@ except Exception as e:
                 else:
                     # Only log file not found every 30 seconds
                     if waited_time % 30 == 0:
-                        _logger.info(f"[LAUNCHLY_SAAS - {self.name}] Log file not found yet, waiting... ({waited_time}s)")
+                        _logger.info(
+                            f"[LAUNCHLY_SAAS - {self.name}] Log file not found yet, waiting... ({waited_time}s)")
                         self.add_to_log(f"[INFO] Waiting for Odoo to create log file... ({waited_time}s)")
 
                 time.sleep(check_interval)
@@ -1510,8 +1507,6 @@ except Exception as e:
         # Refresh db_users list
         self.add_to_log("[INFO] Refreshing database users list...")
         self.refresh_db_users()
-
-
 
     def setup_user_manually(self):
         """Manual button to setup user after instance is running"""
@@ -1723,7 +1718,8 @@ except Exception as e:
                 modified_file.write(script_content)
             _logger.info(f"[LAUNCHLY_SAAS - {self.name}] File created successfully: {modified_path}")
         except PermissionError as e:
-            _logger.warning(f"[LAUNCHLY_SAAS - {self.name}] Permission denied for {modified_path}, trying with sudo: {str(e)}")
+            _logger.warning(
+                f"[LAUNCHLY_SAAS - {self.name}] Permission denied for {modified_path}, trying with sudo: {str(e)}")
             # Try to create the file with sudo
             if self.create_file_with_sudo(modified_path, script_content):
                 _logger.info(f"[LAUNCHLY_SAAS - {self.name}] File created successfully with sudo: {modified_path}")
@@ -1741,7 +1737,7 @@ except Exception as e:
             _logger.info(f"[LAUNCHLY_SAAS - {self.name}] Creating file with sudo: {file_path}")
             _logger.info(
                 f"[LAUNCHLY_SAAS - {self.name}] File content length: {len(content) if content else 0} characters")
-            
+
             # First ensure the directory exists
             directory = os.path.dirname(file_path)
             if directory and not os.path.exists(directory):
@@ -1750,23 +1746,23 @@ except Exception as e:
                     self.excute_command_with_sudo(mkdir_cmd, shell=True, check=True)
                 else:
                     self.excute_command(mkdir_cmd, shell=True, check=True)
-            
+
             # Create a temporary file first
             import tempfile
             with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.tmp') as tmp_file:
                 tmp_file.write(content)
                 tmp_file_path = tmp_file.name
-            
+
             # Move the temporary file to the target location using sudo
             move_cmd = f"mv '{tmp_file_path}' '{file_path}'"
             if self.root_sudo_password:
                 result = self.excute_command_with_sudo(move_cmd, shell=True, check=True)
             else:
                 result = self.excute_command(move_cmd, shell=True, check=True)
-            
+
             _logger.info(f"[LAUNCHLY_SAAS - {self.name}] File created successfully with sudo: {file_path}")
             return True
-            
+
         except Exception as e:
             _logger.error(f"[LAUNCHLY_SAAS - {self.name}] Failed to create file with sudo {file_path}: {str(e)}")
             # Clean up temporary file if it exists
@@ -1783,7 +1779,8 @@ except Exception as e:
         try:
             # Try regular chmod first
             os.chmod(file_path, mode)
-            _logger.info(f"[LAUNCHLY_SAAS - {self.name}] File permissions changed successfully: {file_path} (mode: {oct(mode)})")
+            _logger.info(
+                f"[LAUNCHLY_SAAS - {self.name}] File permissions changed successfully: {file_path} (mode: {oct(mode)})")
             return True
         except PermissionError:
             _logger.warning(f"[LAUNCHLY_SAAS - {self.name}] Permission denied for chmod {file_path}, trying with sudo")
@@ -1794,11 +1791,13 @@ except Exception as e:
                     result = self.excute_command_with_sudo(chmod_cmd, shell=True, check=True)
                 else:
                     result = self.excute_command(chmod_cmd, shell=True, check=True)
-                
-                _logger.info(f"[LAUNCHLY_SAAS - {self.name}] File permissions changed successfully with sudo: {file_path} (mode: {oct(mode)})")
+
+                _logger.info(
+                    f"[LAUNCHLY_SAAS - {self.name}] File permissions changed successfully with sudo: {file_path} (mode: {oct(mode)})")
                 return True
             except Exception as e:
-                _logger.error(f"[LAUNCHLY_SAAS - {self.name}] Failed to change permissions with sudo {file_path}: {str(e)}")
+                _logger.error(
+                    f"[LAUNCHLY_SAAS - {self.name}] Failed to change permissions with sudo {file_path}: {str(e)}")
                 self.add_to_log(f"[ERROR] Failed to change file permissions: {str(e)}")
                 return False
         except Exception as e:
@@ -1821,8 +1820,6 @@ except Exception as e:
                 instance.database_name = db_name[:63]  # PostgreSQL database name limit
             else:
                 instance.database_name = False
-
-
 
     @api.model
     def create(self, vals):
@@ -1851,7 +1848,6 @@ except Exception as e:
                 odoo_addon.copy({'instance_id': instance.id})
             # Only apply template logic if not skipped
 
-
         config = instance.env['saas.config'].search([], limit=1)
         if config:
             backup_path = os.path.join(config.backup_path or '/tmp', instance.name)
@@ -1872,7 +1868,7 @@ except Exception as e:
         return password
 
     def unlink(self):
-        """Delete instance and clean up all associated Docker containers and files"""
+        """Delete instance and clean up all associated odoo service and files"""
         for instance in self:
             _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Starting complete instance deletion process")
             instance.add_to_log("[INFO] Starting complete instance deletion - this will destroy all data")
@@ -1888,11 +1884,6 @@ except Exception as e:
 
                 # Fallback cleanup if destroy_instance fails
                 try:
-                    if instance.state == 'running':
-                        modified_path = instance.instance_data_path + '/docker-compose.yml'
-                        if os.path.exists(modified_path):
-                            cmd = f"docker-compose -f {modified_path} down -v --remove-orphans"
-                            instance.excute_command(cmd, shell=True, check=False)
 
                     # Clean up instance files and directories as fallback
                     if os.path.exists(instance.instance_data_path):
@@ -1905,7 +1896,7 @@ except Exception as e:
                         f"[LAUNCHLY_SAAS - {instance.name}] Fallback cleanup also failed: {str(fallback_error)}")
                     instance.add_to_log(f"[ERROR] Could not remove some files: {str(fallback_error)}")
 
-        return super(OdooDockerInstance, self).unlink()
+        return super(OdooInstance, self).unlink()
 
     def destroy_instance(self):
         """Completely destroy the systemd service, database, and all files (full reset)"""
@@ -1998,14 +1989,14 @@ except Exception as e:
                         # Reload systemd daemon
                         reload_cmd = "sudo -S systemctl daemon-reload"
                         if instance.root_sudo_password:
-                                subprocess.run(
-                                    reload_cmd,
-                                    shell=True,
-                                    input=instance.root_sudo_password + '\n',
-                                    text=True,
-                                    capture_output=True,
-                                    timeout=10
-                                )
+                            subprocess.run(
+                                reload_cmd,
+                                shell=True,
+                                input=instance.root_sudo_password + '\n',
+                                text=True,
+                                capture_output=True,
+                                timeout=10
+                            )
 
                         instance.add_to_log("[INFO] Systemd service file removed and daemon reloaded")
 
@@ -2138,11 +2129,6 @@ except Exception as e:
                                     shutil.rmtree(dir_path)
                                     _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Removed directory: {dir_path}")
 
-                            # Remove docker-compose.yml
-                            if os.path.exists(modified_path):
-                                os.remove(modified_path)
-                                _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Removed docker-compose.yml")
-
                             # Remove the entire instance directory if it's empty
                             try:
                                 os.rmdir(instance.instance_data_path)
@@ -2160,9 +2146,8 @@ except Exception as e:
 
                 # Reset repository clone status
 
-
                 # Clear logs
-                instance.docker_logs = ""
+                instance.odoo_logs = ""
                 instance.log = ""
 
                 # Set state to draft (needs to be recreated)
@@ -2172,16 +2157,12 @@ except Exception as e:
                 instance.add_to_log("[SUCCESS] Instance completely destroyed!")
                 instance.add_to_log("[INFO] Database properly dropped and all resources removed")
                 instance.add_to_log("[INFO] Instance reset to draft state - ready for recreation")
-                instance.add_to_log("[INFO] You can now run 'Create Docker Environment' to recreate the instance")
+                instance.add_to_log("[INFO] You can now run 'Create odoo Environment' to recreate the instance")
 
             except Exception as e:
                 _logger.error(f"[LAUNCHLY_SAAS - {instance.name}] Failed to destroy instance: {str(e)}")
                 instance.add_to_log(f"[ERROR] Failed to destroy instance: {str(e)}")
                 instance.write({'state': 'error'})
-
-
-
-
 
     def _update_odoo_conf_addons_path(self):
         """Update odoo.conf file with current addons path, ensuring correct line endings, formatting, and indentation"""
@@ -2247,6 +2228,7 @@ except Exception as e:
             except Exception as e:
                 _logger.error(f"[LAUNCHLY_SAAS - {instance.name}] Error updating odoo.conf: {str(e)}")
                 instance.add_to_log(f"[ERROR] Error updating odoo.conf: {str(e)}")
+
     def install_custom_addon_in_odoo(self, addon_names):
         """Install specific addons in the running Odoo instance via superuser script."""
         for instance in self:
@@ -3142,7 +3124,6 @@ server {{
 
         return res
 
-
     def refresh_addons_list(self):
         """Refresh the list of all addons from the running Odoo instance."""
         for instance in self:
@@ -3277,7 +3258,8 @@ except Exception as e:
                 return False
 
             try:
-                _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Uninstalling addons {addon_names} via superuser script")
+                _logger.info(
+                    f"[LAUNCHLY_SAAS - {instance.name}] Uninstalling addons {addon_names} via superuser script")
                 instance.add_to_log(f"[INFO] Uninstalling addons {addon_names} via internal script...")
 
                 # Convert addon_names to a Python list string for the script

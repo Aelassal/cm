@@ -4,7 +4,7 @@
         <!-- Demo Welcome Email Template -->
         <record id="mail_template_demo_welcome" model="mail.template">
             <field name="name">Demo Instance Welcome</field>
-            <field name="model_id" ref="launchly_saas.model_odoo_docker_instance"/>
+            <field name="model_id" ref="launchly_saas.model_odoo_instance"/>
             <field name="subject">Welcome to Your Demo Instance - {{ object.company_name }}</field>
             <field name="email_from">{{ user.email_formatted or 'noreply@launchly.com' }}</field>
             <field name="partner_to">{{ object.user_email }}</field>
