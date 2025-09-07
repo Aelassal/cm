@@ -1132,7 +1132,7 @@ except Exception as e:
             raise UserError("Instance can only be installed from Draft or Error state")
 
         # Get script path (same as OdooInstance)
-        script_path = self.config_id.script_path
+        script_path = '/home/abdulrahman/Downloads/odoo-install-script-main/install_odoo.sh'
 
         # Pre-installation checks
         self.add_to_log("[INFO] Starting installation pre-checks...")
@@ -1701,8 +1701,24 @@ except Exception as e:
         try:
             if not os.path.exists(path):
                 _logger.info(f"[LAUNCHLY_SAAS - {self.name}] Creating directory: {path}")
-                os.makedirs(path)
-                _logger.info(f"[LAUNCHLY_SAAS - {self.name}] Directory created successfully: {path}")
+
+                # Check if we need sudo for /opt directories
+                if path.startswith('/opt') and self.root_sudo_password:
+                    # Use sudo to create directories in /opt
+                    result = self.excute_command_with_sudo(f"mkdir -p {path}", check=False)
+                    if result.returncode == 0:
+                        _logger.info(f"[LAUNCHLY_SAAS - {self.name}] Directory created successfully with sudo: {path}")
+                    else:
+                        _logger.error(
+                            f"[LAUNCHLY_SAAS - {self.name}] Failed to create directory with sudo {path}: {result.stderr}")
+                        self.add_to_log(f"Error while creating directory {path} with sudo: {result.stderr}")
+                        # Fallback to regular makedirs
+                        os.makedirs(path, exist_ok=True)
+                        _logger.info(f"[LAUNCHLY_SAAS - {self.name}] Directory created with fallback method: {path}")
+                else:
+                    # Use regular makedirs for non-/opt directories or when no sudo password
+                    os.makedirs(path, exist_ok=True)
+                    _logger.info(f"[LAUNCHLY_SAAS - {self.name}] Directory created successfully: {path}")
             else:
                 _logger.info(f"[LAUNCHLY_SAAS - {self.name}] Directory already exists: {path}")
         except Exception as e:
