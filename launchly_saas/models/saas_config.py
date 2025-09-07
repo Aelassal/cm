@@ -11,4 +11,4 @@ class SaasConfig(models.Model):
     domain = fields.Char(string='Domain', help='Domain for the SaaS instances')
     ssl_email = fields.Char(string='SSL Email', help='Email for SSL certificate registration')
     instance_id = fields.Many2one('odoo.instance', string='Default Instance')
-    script_path = fields.Char
+    script_path = fields.Char()
