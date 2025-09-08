@@ -25,6 +25,8 @@ class OdooInstance(models.Model):
     _description = 'Odoo odoo Instance'
 
     name = fields.Char(string='Instance Name', required=True)
+    active = fields.Boolean(default=True)
+
     state = fields.Selection(
         [('draft', 'Draft'), ('stopped', 'Stopped'), ('running', 'Running'), ('installing', 'Installing'),
          ('installed', 'Installed'), ('error', 'Error')],

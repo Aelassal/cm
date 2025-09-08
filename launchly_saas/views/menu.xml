@@ -2,7 +2,7 @@
 <odoo>
 
     <record id="action_odoo_instance" model="ir.actions.act_window">
-        <field name="name">Odoo odoo Instance</field>
+        <field name="name">Odoo Instance</field>
         <field name="res_model">odoo.instance</field>
         <field name="view_mode">kanban,list,form</field>
          <field name="context">{'search_default_groupby_state': 1}</field>
@@ -11,7 +11,7 @@
 
 
     <record id="action_odoo_template_form" model="ir.actions.act_window">
-        <field name="name">odoo Compose Template</field>
+        <field name="name">odoo Template</field>
         <field name="res_model">odoo.template</field>
         <field name="view_mode">list,form</field>
     </record>
