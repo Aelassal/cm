@@ -138,6 +138,9 @@ xmlrpc_port = $HTTP_PORT
 logfile = $OE_LOG
 data_dir = $OE_HOME/data
 without_demo = $WITHOUT_DEMO
+db_name = $DB_NAME
+db_manager = False
+list_db = False
 EOF"
 
 sudo chown $OE_USER:$OE_USER $OE_CONFIG
