@@ -33,8 +33,10 @@ class OdooTemplate(models.Model):
     source_path = fields.Char(string='Odoo Source Path',
                              help='Path to the Odoo source code (e.g., /opt/odoo/odoo-18.0)')
     odoo_version = fields.Selection([
+        ('14', 'Odoo 14'),
+        ('15', 'Odoo 15'),
         ('16', 'Odoo 16'),
-        ('17', 'Odoo 17'), 
+        ('17', 'Odoo 17'),
         ('18', 'Odoo 18'),
     ], string='Odoo Version', required=True, default='18',
        help='Odoo version for installation')
