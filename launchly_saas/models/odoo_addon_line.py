@@ -28,4 +28,23 @@ class OdooAddonLine(models.Model):
         for addon in self:
             if addon.state == 'installed':
                 addon.instance_id.uninstall_addon_in_odoo([addon.name])
-                addon.state = 'uninstalled' 
+                addon.state = 'uninstalled'
+
+    @api.model
+    def cron_cleanup_duplicates(self):
+        """
+        Delete duplicate addon lines with same name, version and license.
+        Keeps the first created one.
+        """
+        # group by name, version, license and get first IDs
+        self.env.cr.execute("""
+                    SELECT MIN(id) as keep_id, name, license
+                    FROM odoo_addon_line
+                    GROUP BY name, license
+                """)
+        keep_ids = [row[0] for row in self.env.cr.fetchall()]
+
+        # delete all except the ones we keep
+        duplicates = self.search([('id', 'not in', keep_ids)])
+        if duplicates:
+            duplicates.unlink()

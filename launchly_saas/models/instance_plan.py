@@ -69,12 +69,25 @@ class InstancePlan(models.Model):
         if self.config_id and self.config_id.instance_id:
             return self.config_id.instance_id.custom_addon_line
         return self.env['custom.addon.line']
-    
+
     odoo_addon_line_ids = fields.Many2many(
         'odoo.addon.line',
         'instance_plan_odoo_addon_rel',
         'plan_id', 'odoo_addon_id',
         string='Odoo Addons',
-        help='Select Odoo addons from any instance to include in this plan.'
+        help='Select Odoo addons from any instance to include in this plan.',
+        domain=lambda self: self._domain_unique_odoo_addons()
     )
+
+    @api.model
+    def _domain_unique_odoo_addons(self):
+        """Return a domain ensuring unique addon names."""
+        # Get first record per name
+        self.env.cr.execute("""
+                    SELECT MIN(id)
+                    FROM odoo_addon_line
+                    GROUP BY name
+                """)
+        ids = [r[0] for r in self.env.cr.fetchall()]
+        return [('id', 'in', ids)]
     instance_ids = fields.One2many('odoo.instance', 'plan_id', string='Instances Using This Plan') 
