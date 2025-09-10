@@ -96,7 +96,7 @@ class OdooInstance(models.Model):
         compute='_compute_config_id',
         store=True
     )
-    addon_line = fields.One2many('odoo.addon.line', 'instance_id', string='All Addons')
+    addon_line = fields.One2many('odoo.addon.line', 'instance_id', string='All Addons',  domain=[('license', '=', 'LGPL-3')])
     allowed_users_count = fields.Integer()
     allowed_modules_count = fields.Integer()
     plan_id = fields.Many2one('instance.plan', string='Plan', ondelete='set null',
