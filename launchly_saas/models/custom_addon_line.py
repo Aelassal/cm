@@ -505,7 +505,7 @@ class CustomAddonLine(models.Model):
                         else:
                             # No sudo password available
                             _logger.error(f"[LAUNCHLY_SAAS - {record.instance_id.name}] Permission denied and no sudo password available")
-                            raise UserError(_("Permission denied: Cannot remove files created by odoo containers. Please provide sudo password in instance settings."))
+                            raise UserError(_("Permission denied: Cannot remove files created by odoo . Please provide sudo password in instance settings."))
                 
                 # Remove the record
                 record.unlink()

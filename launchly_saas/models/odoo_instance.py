@@ -22,7 +22,7 @@ _logger = logging.getLogger(__name__)
 class OdooInstance(models.Model):
     _name = 'odoo.instance'
     _inherit = "odoo.template"
-    _description = 'Odoo odoo Instance'
+    _description = 'odoo Instance'
 
     name = fields.Char(string='Instance Name', required=True)
     active = fields.Boolean(default=True)
@@ -989,8 +989,7 @@ except Exception as e:
                                 addon_line._compute_is_installed()
 
                             # Clean up
-                            if os.path.exists(script_path):
-                                os.remove(script_path)
+                            instance.remove_file_with_sudo(script_path)
                             return True
                         elif line.startswith("ERROR|"):
                             instance.add_to_log(f"[ERROR] Script error: {line.split('|', 1)[1]}")
@@ -1427,99 +1426,6 @@ except Exception as e:
         # This method is no longer needed but kept for compatibility
         return True
 
-    def _setup_user_after_startup(self):
-        """Setup user after Odoo instance is running - monitors logs for registry loaded message"""
-        _logger.info(f"[LAUNCHLY_SAAS - {self.name}] Setting up user after startup")
-        self.add_to_log("[INFO] Monitoring Odoo logs for registry loaded message...")
-
-        import time
-
-        # Monitor Odoo logs for registry loaded message
-        max_wait_time = 300  # 5 minutes maximum wait
-        check_interval = 5  # Check every 5 seconds (more responsive)
-        waited_time = 0
-        last_position = 0  # Track file position to read only new content
-
-        log_file_path = f"/var/log/{self.name}.log"
-
-        while waited_time < max_wait_time:
-            try:
-                if os.path.exists(log_file_path):
-                    try:
-                        with open(log_file_path, 'r') as f:
-                            # Seek to last read position to read only new content
-                            f.seek(last_position)
-                            new_content = f.read()
-
-                            if new_content:
-                                # Update position for next read
-                                last_position = f.tell()
-
-                                # Check if registry loaded message appears in new content
-                                if "odoo.modules.registry: Registry loaded in" in new_content:
-                                    _logger.info(
-                                        f"[LAUNCHLY_SAAS - {self.name}] Registry loaded message found in logs, Odoo is ready!")
-                                    self.add_to_log("[INFO] Odoo registry loaded successfully, instance is ready!")
-                                    break
-
-                            # Only log status every 30 seconds to reduce noise
-                            if waited_time % 30 == 0:
-                                _logger.info(
-                                    f"[LAUNCHLY_SAAS - {self.name}] Registry not loaded yet, waiting... ({waited_time}s)")
-                                self.add_to_log(f"[INFO] Waiting for Odoo registry to load... ({waited_time}s)")
-
-                    except Exception as log_error:
-                        # Only log errors every 30 seconds to reduce noise
-                        if waited_time % 30 == 0:
-                            _logger.info(f"[LAUNCHLY_SAAS - {self.name}] Could not read log file: {str(log_error)}")
-                            self.add_to_log(f"[INFO] Waiting for log file to be available... ({waited_time}s)")
-                else:
-                    # Only log file not found every 30 seconds
-                    if waited_time % 30 == 0:
-                        _logger.info(
-                            f"[LAUNCHLY_SAAS - {self.name}] Log file not found yet, waiting... ({waited_time}s)")
-                        self.add_to_log(f"[INFO] Waiting for Odoo to create log file... ({waited_time}s)")
-
-                time.sleep(check_interval)
-                waited_time += check_interval
-
-            except Exception as e:
-                # Only log errors every 30 seconds
-                if waited_time % 30 == 0:
-                    _logger.warning(f"[LAUNCHLY_SAAS - {self.name}] Error monitoring logs: {str(e)}")
-                time.sleep(check_interval)
-                waited_time += check_interval
-
-        if waited_time >= max_wait_time:
-            _logger.warning(
-                f"[LAUNCHLY_SAAS - {self.name}] Timeout waiting for registry loaded message, proceeding anyway")
-            self.add_to_log("[WARNING] Timeout waiting for registry loaded message, attempting user setup anyway...")
-
-        # User setup is now handled by the bash script during installation
-        # Just log the completion and mark user as done
-        self.add_to_log("[INFO] User setup was completed during installation")
-        self.add_to_log(f"[INFO] Instance ready at: {self.instance_url}")
-        self.add_to_log(f"[INFO] Login: {self.user_email}")
-        self.add_to_log(f"[INFO] Password: {self.user_phone if self.user_phone else self.user_password}")
-
-        # Set user_done to True
-        self.user_done = True
-        _logger.info(f"[LAUNCHLY_SAAS - {self.name}] User setup marked as done")
-
-        # Refresh db_users list
-        self.add_to_log("[INFO] Refreshing database users list...")
-        self.refresh_db_users()
-
-    def setup_user_manually(self):
-        """Manual button to setup user after instance is running"""
-        for instance in self:
-            if instance.state != 'running':
-                instance.add_to_log("[ERROR] Instance must be running to setup user")
-                return
-
-            instance.add_to_log("[INFO] User setup is now handled by the installation script")
-            _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] User setup is handled during installation")
-
     def stop_instance(self):
         """Stop Odoo systemd service for the instance"""
         for instance in self:
@@ -1821,6 +1727,37 @@ except Exception as e:
         except Exception as e:
             _logger.error(f"[LAUNCHLY_SAAS - {self.name}] Failed to change file permissions {file_path}: {str(e)}")
             self.add_to_log(f"[ERROR] Failed to change file permissions: {str(e)}")
+            return False
+
+    def remove_file_with_sudo(self, file_path):
+        """Remove file with sudo when regular os.remove fails due to permissions"""
+        try:
+            # Try regular remove first
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                _logger.info(f"[LAUNCHLY_SAAS - {self.name}] File removed successfully: {file_path}")
+                return True
+            return True  # File doesn't exist, consider it removed
+        except PermissionError:
+            _logger.warning(
+                f"[LAUNCHLY_SAAS - {self.name}] Permission denied for removing {file_path}, trying with sudo")
+            try:
+                # Use sudo to remove the file
+                remove_cmd = f"rm -f '{file_path}'"
+                if self.root_sudo_password:
+                    result = self.excute_command_with_sudo(remove_cmd, shell=True, check=True)
+                else:
+                    result = self.excute_command(remove_cmd, shell=True, check=True)
+
+                _logger.info(f"[LAUNCHLY_SAAS - {self.name}] File removed successfully with sudo: {file_path}")
+                return True
+            except Exception as e:
+                _logger.error(f"[LAUNCHLY_SAAS - {self.name}] Failed to remove file with sudo {file_path}: {str(e)}")
+                self.add_to_log(f"[ERROR] Failed to remove file: {str(e)}")
+                return False
+        except Exception as e:
+            _logger.error(f"[LAUNCHLY_SAAS - {self.name}] Failed to remove file {file_path}: {str(e)}")
+            self.add_to_log(f"[ERROR] Failed to remove file: {str(e)}")
             return False
 
     @api.depends('company_name')
@@ -2320,12 +2257,13 @@ except Exception as e:
 
                 # Execute script directly using instance's Python environment
                 venv_python = f"/opt/{instance.name}/venv/bin/python3"
-                cmd = f"{venv_python} {script_path}"
 
                 if instance.root_sudo_password:
+                    cmd = f"sudo -u {instance.name} {venv_python} {script_path}"
                     result = instance.excute_command_with_sudo(cmd, shell=True, check=False)
                 else:
-                    result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=False)
+                    cmd = f"-u {instance.name} {venv_python} {script_path}"
+                    result = instance.excute_command(cmd, shell=True, check=False)
 
                 if result.returncode == 0:
                     output = result.stdout.strip().splitlines()
@@ -2363,8 +2301,7 @@ except Exception as e:
                         f"[LAUNCHLY_SAAS - {instance.name}] Install completed: {success_count} success, {warning_count} warnings, {error_count} errors")
 
                     # Clean up
-                    if os.path.exists(script_path):
-                        os.remove(script_path)
+                    instance.remove_file_with_sudo(script_path)
 
                     return error_count == 0  # Return True only if no errors occurred
 
@@ -2439,7 +2376,7 @@ except Exception as e:
                 instance.chmod_with_sudo(script_path, 0o755)
                 # Execute script directly using instance's Python environment
                 venv_python = f"/opt/{instance.name}/venv/bin/python3"
-                cmd = f"{venv_python} {script_path}"
+                cmd = f"-u {instance.name} {venv_python} {script_path}"
 
                 if instance.root_sudo_password:
                     result = instance.excute_command_with_sudo(cmd, shell=True, check=False)
@@ -2480,8 +2417,7 @@ except Exception as e:
                     _logger.info(
                         f"[LAUNCHLY_SAAS - {instance.name}] Upgrade completed: {success_count} success, {warning_count} warnings, {error_count} errors")
 
-                    if os.path.exists(script_path):
-                        os.remove(script_path)
+                    instance.remove_file_with_sudo(script_path)
 
                     return error_count == 0
 
@@ -2545,11 +2481,12 @@ except Exception as e:
                 instance.chmod_with_sudo(script_path, 0o755)
                 # Execute script directly using instance's Python environment
                 venv_python = f"/opt/{instance.name}/venv/bin/python3"
-                cmd = f"{venv_python} {script_path}"
 
                 if instance.root_sudo_password:
+                    cmd = f"sudo -u {instance.name} {venv_python} {script_path}"
                     result = instance.excute_command_with_sudo(cmd, shell=True, check=False)
                 else:
+                    cmd = f"-u {instance.name} {venv_python} {script_path}"
                     result = instance.excute_command(cmd, shell=True, check=False)
 
                 if result.returncode == 0:
@@ -2594,8 +2531,7 @@ except Exception as e:
                     _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Refreshed {success_count} users")
 
                     # Clean up
-                    if os.path.exists(script_path):
-                        os.remove(script_path)
+                    instance.remove_file_with_sudo(script_path)
 
                     return True
 
@@ -2670,11 +2606,12 @@ except Exception as e:
 
                 # Execute script directly using instance's Python environment
                 venv_python = f"/opt/{instance.name}/venv/bin/python3"
-                cmd = f"{venv_python} {script_path}"
 
                 if instance.root_sudo_password:
+                    cmd = f"sudo -u {instance.name} {venv_python} {script_path}"
                     result = instance.excute_command_with_sudo(cmd, shell=True, check=False)
                 else:
+                    cmd = f"-u {instance.name} {venv_python} {script_path}"
                     result = instance.excute_command(cmd, shell=True, check=False)
 
                 if result.returncode == 0:
@@ -2688,8 +2625,7 @@ except Exception as e:
                         db_user = instance.db_users.filtered(lambda u: u.login == user_login)
                         if db_user:
                             db_user.current_password = new_password
-                        if os.path.exists(script_path):
-                            os.remove(script_path)
+                        instance.remove_file_with_sudo(script_path)
                         return True
                     else:
                         instance.add_to_log(f"[ERROR] Failed to change password: {output}")
@@ -3187,12 +3123,11 @@ except Exception as e:
                 instance.chmod_with_sudo(script_path, 0o755)
                 # Execute script directly using instance's Python environment
                 venv_python = f"/opt/{instance.name}/venv/bin/python3"
-                cmd = f"{venv_python} {script_path}"
                 if instance.root_sudo_password:
+                    cmd = f"sudo -u {instance.name} {venv_python} {script_path}"
                     result = instance.excute_command_with_sudo(cmd, shell=True, check=False)
-                    instance.restart_odoo_service()
-
                 else:
+                    cmd = f"-u {instance.name} {venv_python} {script_path}"
                     result = instance.excute_command(cmd, shell=True, check=False)
                 if result.returncode == 0:
                     output = result.stdout.strip().splitlines()
@@ -3258,8 +3193,7 @@ except Exception as e:
 
                     instance.add_to_log("[SUCCESS] Refreshed addons list and updated custom addon states via script")
                     # Clean up
-                    if os.path.exists(script_path):
-                        os.remove(script_path)
+                    instance.remove_file_with_sudo(script_path)
                     return True
                 else:
                     instance.add_to_log(f"[ERROR] Script failed: {result.stderr}")
@@ -3336,12 +3270,13 @@ except Exception as e:
 
                 # Execute script directly using instance's Python environment
                 venv_python = f"/opt/{instance.name}/venv/bin/python3"
-                cmd = f"{venv_python} {script_path}"
 
                 if instance.root_sudo_password:
+                    cmd = f"sudo -u {instance.name} {venv_python} {script_path}"
                     result = instance.excute_command_with_sudo(cmd, shell=True, check=False)
                 else:
-                    result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=False)
+                    cmd = f"-u {instance.name} {venv_python} {script_path}"
+                    result = instance.excute_command(cmd, shell=True, check=False)
 
                 if result.returncode == 0:
                     output = result.stdout.strip().splitlines()
@@ -3379,8 +3314,7 @@ except Exception as e:
                         f"[LAUNCHLY_SAAS - {instance.name}] Uninstall completed: {success_count} success, {warning_count} warnings, {error_count} errors")
 
                     # Clean up
-                    if os.path.exists(script_path):
-                        os.remove(script_path)
+                    instance.remove_file_with_sudo(script_path)
 
                     return error_count == 0  # Return True only if no errors occurred
 
@@ -3422,10 +3356,11 @@ with registry.cursor() as cr:
             instance.chmod_with_sudo(script_path, 0o755)
             # Execute script directly using instance's Python environment
             venv_python = f"/opt/{instance.name}/venv/bin/python3"
-            cmd = f"{venv_python} {script_path}"
             if instance.root_sudo_password:
+                cmd = f"sudo -u {instance.name} {venv_python} {script_path}"
                 result = instance.excute_command_with_sudo(cmd, shell=True, check=False)
             else:
+                cmd = f"-u {instance.name} {venv_python} {script_path}"
                 result = instance.excute_command(cmd, shell=True, check=False)
             if result.returncode == 0:
                 output = result.stdout if result.stdout else ''
@@ -3482,12 +3417,11 @@ with registry.cursor() as cr:
 
             # Execute script directly using instance's Python environment
             venv_python = f"/opt/{instance.name}/venv/bin/python3"
-            cmd = f"{venv_python} {script_path}"
-
-            # Execute script directly on host
             if instance.root_sudo_password:
+                cmd = f"sudo -u {instance.name} {venv_python} {script_path}"
                 result = instance.excute_command_with_sudo(cmd, shell=True, check=False)
             else:
+                cmd = f"-u {instance.name} {venv_python} {script_path}"
                 result = instance.excute_command(cmd, shell=True, check=False)
 
             # Log the result
