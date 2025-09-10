@@ -12,9 +12,7 @@
                             confirm="This will create the odoo environment. Are you sure you want to proceed?"/>
 <!--                    <button string="Initiate Instance" invisible="state in ('running')" type="object" name="start_instance"-->
 <!--                            class="oe_highlight o_button_icon o_icon_play"/>-->
-                    <button string="Setup User" invisible="state != 'running'" type="object" name="setup_user_manually"
-                            class="o_button_icon" icon="fa-user-plus"
-                            confirm="This will setup the admin user with your configured credentials. Continue?"/>
+
                     <button string="start Instance" type="object" name="restart_instance" invisible="state in ('running','draft')"
                             class="oe_highlight o_button_icon o_icon_play"/>
                     <button string="restart Instance" type="object" name="reload_instance" invisible="state != 'running'"
