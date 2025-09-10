@@ -387,10 +387,13 @@ class OdooInstance(models.Model):
                 logs = ""
 
                 # Get systemd service logs using journalctl
-                journal_cmd = ["sudo", "journalctl", "-u", service_name, "--lines=100", "--no-pager"]
-                _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Fetching systemd logs: {' '.join(journal_cmd)}")
+                journal_cmd = f"journalctl -u {service_name} --lines=100 --no-pager"
+                _logger.info(f"[LAUNCHLY_SAAS - {instance.name}] Fetching systemd logs: {journal_cmd}")
 
-                journal_result = subprocess.run(journal_cmd, capture_output=True, text=True, timeout=30)
+                if instance.root_sudo_password:
+                    journal_result = instance.excute_command_with_sudo(journal_cmd, shell=True, check=False)
+                else:
+                    journal_result = instance.excute_command(journal_cmd, shell=True, check=False)
 
                 if journal_result.returncode == 0:
                     if journal_result.stdout:
