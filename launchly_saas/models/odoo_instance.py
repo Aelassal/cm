@@ -259,17 +259,23 @@ class OdooInstance(models.Model):
             service_name = f"{self.name}.service"
 
             # Check if service is active
-            status_result = subprocess.run(["sudo", "systemctl", "is-active", service_name],
-                                           capture_output=True, text=True)
+            status_cmd = f"systemctl is-active {service_name}"
+            if self.root_sudo_password:
+                status_result = self.excute_command_with_sudo(status_cmd, shell=True, check=False)
+            else:
+                status_result = self.excute_command(status_cmd, shell=True, check=False)
 
             if status_result.returncode != 0 or status_result.stdout.strip() != "active":
                 usage["storage_usage"] = self._get_db_size()
                 return usage
 
             # Get main PID
-            pid_result = subprocess.run(["sudo", "systemctl", "show", service_name,
-                                         "--property=MainPID", "--value"],
-                                        capture_output=True, text=True)
+            pid_cmd = f"systemctl show {service_name} --property=MainPID --value"
+            if self.root_sudo_password:
+                pid_result = self.excute_command_with_sudo(pid_cmd, shell=True, check=False)
+            else:
+                pid_result = self.excute_command(pid_cmd, shell=True, check=False)
+
             main_pid = pid_result.stdout.strip()
 
             if not main_pid or main_pid == "0":
@@ -277,8 +283,11 @@ class OdooInstance(models.Model):
                 return usage
 
             # Get main process stats
-            ps_result = subprocess.run(["ps", "--no-headers", "-o", "pid,ppid,%cpu,%mem,vsz,rss", "-p", main_pid],
-                                       capture_output=True, text=True)
+            ps_cmd = f"ps --no-headers -o pid,ppid,%cpu,%mem,vsz,rss -p {main_pid}"
+            if self.root_sudo_password:
+                ps_result = self.excute_command_with_sudo(ps_cmd, shell=True, check=False)
+            else:
+                ps_result = self.excute_command(ps_cmd, shell=True, check=False)
 
             if ps_result.stdout.strip():
                 parts = ps_result.stdout.strip().split()
@@ -289,8 +298,11 @@ class OdooInstance(models.Model):
                     usage["pids"] = 1
 
             # Get child processes stats
-            children_result = subprocess.run(["ps", "--no-headers", "-o", "pid,%cpu,%mem", "--ppid", main_pid],
-                                             capture_output=True, text=True)
+            children_cmd = f"ps --no-headers -o pid,%cpu,%mem --ppid {main_pid}"
+            if self.root_sudo_password:
+                children_result = self.excute_command_with_sudo(children_cmd, shell=True, check=False)
+            else:
+                children_result = self.excute_command(children_cmd, shell=True, check=False)
 
             if children_result.returncode == 0 and children_result.stdout.strip():
                 for line in children_result.stdout.strip().split('\n'):
